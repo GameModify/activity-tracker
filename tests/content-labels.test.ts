@@ -1,3 +1,4 @@
+import type { SqliteStore } from '../src/adapters/sqlite/store.ts';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -126,3 +127,47 @@ void test('specific video rules win over a channel even when an older channel pr
     assert.equal(matchingRule(video(), store.rules())?.activity, 'coding');
   });
 });
+
+void test('resetting a channel removes its rule without changing video overrides or history', () => {
+  withStore((store) => {
+    const history = channelPlayback(store);
+    chooseVideo(store, { ...identity, target: 'video', label_id: 'watch' }, randomUUID);
+    const state = chooseVideo(
+      store,
+      { ...identity, target: 'channel', label_id: null },
+      randomUUID,
+    );
+    assert.equal(state.channel_label, null);
+    assert.equal(state.video_label, 'watch');
+    assert.equal(matchingRule(video(), store.rules())?.activity, 'tng:watch');
+    assert.equal(
+      matchingRule({ ...video(), media_id: 'ZYXwvutsrqp' }, store.rules())?.activity,
+      'video',
+    );
+    assert.deepEqual(store.intervals(0, 10), history);
+  });
+});
+void test('channel reset is idempotent and future playback returns to YouTube viewing', () => {
+  withStore((store) => {
+    store.seedRules();
+    store.replaceLabels(labels);
+    chooseVideo(store, { ...identity, target: 'channel', label_id: 'work' }, randomUUID);
+    const reset = { ...identity, target: 'channel', label_id: null } as const;
+    chooseVideo(store, reset, randomUUID);
+    const rules = store.rules();
+    assert.equal(chooseVideo(store, reset, randomUUID).channel_label, null);
+    assert.deepEqual(store.rules(), rules);
+    ingest(store, video());
+    ingest(store, video(5000));
+    assert.equal(store.intervals(0, 10)[0]?.activity, 'youtube');
+  });
+});
+
+function channelPlayback(store: SqliteStore) {
+  store.seedRules();
+  store.replaceLabels(labels);
+  chooseVideo(store, { ...identity, target: 'channel', label_id: 'work' }, randomUUID);
+  ingest(store, video());
+  ingest(store, video(5000));
+  return store.intervals(0, 10);
+}

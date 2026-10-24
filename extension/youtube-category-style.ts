@@ -8,5 +8,6 @@ button { cursor: pointer; } button:disabled, select:disabled { opacity: .6; curs
 label { display: grid; gap: 6px; margin-bottom: 12px; } select { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--yt-spec-10-percent-layer, #bbb); border-radius: 8px; background: var(--yt-spec-base-background, #fff); }
 p { font-size: 13px; margin: 10px 0; overflow-wrap: anywhere; } .hint { color: var(--yt-spec-text-secondary, #606060); } .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 .actions button { border: 0; border-radius: 20px; padding: 9px 15px; background: var(--yt-spec-badge-chip-background, #f2f2f2); } .actions .save { background: #6550c9; color: #fff; }
+.resets { display: grid; gap: 4px; margin-top: 12px; } .resets button { text-align: left; border: 0; border-radius: 6px; padding: 7px 0; background: transparent; color: inherit; text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
 button:focus-visible, select:focus-visible { outline: 2px solid #9479ff; outline-offset: 2px; }
 `;

@@ -24,6 +24,8 @@ export class YouTubeCategoryView {
   status = node('p');
   save = node('button', 'Применить');
   cancel = node('button', 'Закрыть');
+  clearChannel = node('button', 'Сбросить категорию канала');
+  clearVideo = node('button', 'Сбросить категорию видео');
   constructor() {
     const style = node('style', categoryStyle);
     this.host.dataset.activityTracker = 'youtube-category';
@@ -50,8 +52,23 @@ export class YouTubeCategoryView {
       this.field('Применить к', this.scope),
       this.hint,
       this.status,
+      this.resetActions(),
       actions,
     );
+  }
+  resetActions(): HTMLDivElement {
+    const actions = node('div');
+    actions.className = 'resets';
+    for (const button of [this.clearChannel, this.clearVideo]) {
+      button.type = 'button';
+      button.hidden = true;
+      actions.append(button);
+    }
+    return actions;
+  }
+  updateResets(state: VideoLabels): void {
+    this.clearChannel.hidden = state.channel_label === null;
+    this.clearVideo.hidden = state.video_label === null;
   }
   field(text: string, control: HTMLSelectElement): HTMLLabelElement {
     const label = node('label', text);
@@ -65,6 +82,7 @@ export class YouTubeCategoryView {
       ...state.labels.map((label) => option(label.id, label.name)),
     );
     this.category.value = selected ?? '';
+    this.updateResets(state);
     const effective = state.labels.find(
       (label) => label.id === (state.video_label ?? state.channel_label),
     );
@@ -93,5 +111,7 @@ export class YouTubeCategoryView {
     this.save.disabled = value;
     this.category.disabled = value;
     this.scope.disabled = value;
+    this.clearChannel.disabled = value;
+    this.clearVideo.disabled = value;
   }
 }

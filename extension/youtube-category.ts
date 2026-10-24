@@ -16,13 +16,20 @@ function mountPoint(page: YouTubePage) {
   const anchor = owner?.querySelector('#subscribe-button, ytd-subscribe-button-renderer');
   return input.success && anchor ? { input: input.data, anchor } : undefined;
 }
-function choice(view: YouTubeCategoryView, save: boolean): VideoLabelMessage['choice'] {
-  return save
-    ? {
-        target: view.scope.value === 'channel' ? 'channel' : 'video',
-        label_id: view.category.value || null,
-      }
-    : undefined;
+function choice(view: YouTubeCategoryView): VideoLabelMessage['choice'] {
+  return {
+    target: view.scope.value === 'channel' ? 'channel' : 'video',
+    label_id: view.category.value || null,
+  };
+}
+function savedMessage(state: VideoLabels, selection: VideoLabelMessage['choice']): string {
+  if (!selection) return '';
+  if (selection.label_id !== null) return 'Сохранено. Другие записи истории не изменены.';
+  if (selection.target === 'video')
+    return 'Категория видео сброшена. Используется категория канала или обычный просмотр YouTube.';
+  return state.video_label
+    ? 'Категория канала сброшена. У этого видео осталось отдельное правило.'
+    : 'Категория канала сброшена. Используется обычный просмотр YouTube.';
 }
 class YouTubeCategory {
   page: YouTubePage;
@@ -112,6 +119,19 @@ class YouTubeCategory {
       }),
     );
     this.bindSelection(view);
+    this.bindResets(view);
+  }
+  bindResets(view: YouTubeCategoryView): void {
+    const buttons = [
+      { button: view.clearChannel, target: 'channel' },
+      { button: view.clearVideo, target: 'video' },
+    ] as const;
+    for (const { button, target } of buttons)
+      this.unbind.push(
+        this.runtime.listen(button, 'click', (event) => {
+          if (event.isTrusted) this.load({ target, label_id: null });
+        }),
+      );
   }
   bindSelection(view: YouTubeCategoryView): void {
     const listen = this.runtime.listen.bind(this.runtime);
@@ -128,7 +148,7 @@ class YouTubeCategory {
     );
     this.unbind.push(
       listen(view.save, 'click', (event) => {
-        if (event.isTrusted) this.load(true);
+        if (event.isTrusted) this.load(choice(view));
       }),
     );
   }
@@ -147,11 +167,16 @@ class YouTubeCategory {
       view.hint.textContent +=
         ' Без отдельного правила используется категория канала или обычный просмотр YouTube.';
   }
-  apply(view: YouTubeCategoryView, revision: number, state: VideoLabels, save: boolean): void {
+  apply(
+    view: YouTubeCategoryView,
+    revision: number,
+    state: VideoLabels,
+    selection: VideoLabelMessage['choice'],
+  ): void {
     if (revision !== this.revision || !this.runtime.available()) return;
     this.state = state;
     view.setLabels(state);
-    view.status.textContent = save ? 'Сохранено. Другие записи истории не изменены.' : '';
+    view.status.textContent = savedMessage(state, selection);
     if (!state.labels.length)
       view.status.textContent = 'Подключи сайт Time & Games к трекеру: категории ещё не получены.';
     this.preview();
@@ -166,7 +191,7 @@ class YouTubeCategory {
     if (!this.state?.labels.length) view.save.disabled = true;
     if (view.panel.hidden === false && !view.root.activeElement) view.category.focus();
   }
-  load(save = false): void {
+  load(selection?: VideoLabelMessage['choice']): void {
     const input = this.identity,
       view = this.view,
       revision = ++this.revision;
@@ -174,9 +199,9 @@ class YouTubeCategory {
     view.busy(true);
     view.status.textContent = '';
     void this.client
-      .request(input, choice(view, save))
+      .request(input, selection)
       .then((state) => {
-        this.apply(view, revision, state, save);
+        this.apply(view, revision, state, selection);
       })
       .catch(() => {
         this.failed(view, revision);
