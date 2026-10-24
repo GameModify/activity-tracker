@@ -1,0 +1,54 @@
+:root {
+  color-scheme: light dark;
+  font:
+    16px/1.6 system-ui,
+    sans-serif;
+}
+body {
+  margin: 0;
+  background: light-dark(#f5f4fa, #17171f);
+  color: light-dark(#232333, #eeeeff);
+}
+main {
+  max-width: 650px;
+  margin: 48px auto;
+  padding: 28px;
+}
+form {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+input:not([type='checkbox']),
+button {
+  box-sizing: border-box;
+  font: inherit;
+  padding: 12px 16px;
+  border: 1px solid #86829b;
+  border-radius: 10px;
+}
+button {
+  cursor: pointer;
+  background: #7352d6;
+  color: white;
+  border-color: #7352d6;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #7352d6;
+}
+hr {
+  border: 0;
+  border-top: 1px solid #86829b;
+  margin: 32px 0;
+}
+#status {
+  min-height: 28px;
+}

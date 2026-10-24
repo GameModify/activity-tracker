@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Сейчас считывается · Activity Tracker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <div class="logo" aria-hidden="true">◷</div>
+      <div>
+        <h1>Сейчас считывается</h1>
+        <p id="version">Activity Tracker</p>
+      </div>
+    </header>
+    <main>
+      <p id="connection" class="connection" role="status">Проверяем подключение…</p>
+      <section>
+        <h2 id="tab-state">Активная вкладка</h2>
+        <p id="tab-title">Загружаем…</p>
+      </section>
+      <section id="media-section">
+        <h2 id="playback">Проверяем воспроизведение…</h2>
+        <ul id="playing"></ul>
+        <p id="probe" class="muted"></p>
+      </section>
+      <section id="interaction-section" hidden>
+        <h2>Действия на странице</h2>
+        <p id="interaction-status"></p>
+        <p id="interaction-detail" class="muted"></p>
+        <button id="interaction-enable" hidden>Включить учёт действий на этом сайте</button>
+      </section>
+      <p id="permission-note" class="muted"></p>
+      <ul id="permissions"></ul>
+      <button id="repair" hidden>Проверить и запустить сбор</button>
+      <p class="muted">
+        На паузе время не учитывается. При включённом автоимпорте сайт показывает текущий отрезок и
+        сохраняет его после паузы. Изменения появляются с небольшой задержкой.
+      </p>
+      <details id="media-details">
+        <summary>Проверка плееров</summary>
+        <ul id="frames"></ul>
+      </details>
+      <p id="notice" role="alert"></p>
+    </main>
+    <footer>
+      <button id="settings">Настройки расширения</button><span>Обновление каждые 5 секунд</span>
+    </footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,69 @@
+import { build } from 'esbuild';
+import { runInNewContext } from 'node:vm';
+import type { MediaMessage } from '../extension/diagnostic-model.ts';
+export class TestMedia {
+  currentTime = 65;
+  duration = 120;
+  paused = true;
+  ended = false;
+  readyState = 4;
+}
+function documentFixture(media: TestMedia, callbacks: Map<string, () => void>) {
+  return {
+    querySelectorAll: (selector: string) =>
+      selector === 'video,audio'
+        ? [media]
+        : [{ src: 'https://player.example/embed?secret=hidden' }],
+    addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
+  };
+}
+function transportFixture(messages: MediaMessage[]) {
+  return {
+    runtime: {
+      getManifest: () => ({ version: 'test' }),
+      sendMessage: (message: MediaMessage) => {
+        messages.push(message);
+        return Promise.resolve();
+      },
+    },
+  };
+}
+async function bundledContent(): Promise<string> {
+  const bundle = await build({
+    entryPoints: ['extension/content.ts'],
+    bundle: true,
+    write: false,
+    format: 'iife',
+  });
+  const code = bundle.outputFiles[0]?.text;
+  if (!code) throw new Error('Missing bundled content script');
+  return code;
+}
+function contentContext(
+  media: TestMedia,
+  messages: MediaMessage[],
+  callbacks: Map<string, () => void>,
+) {
+  return {
+    HTMLMediaElement: TestMedia,
+    URL,
+    document: documentFixture(media, callbacks),
+    window: {
+      addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
+    },
+    chrome: transportFixture(messages),
+    setInterval: (callback: () => void) => callbacks.set('heartbeat', callback),
+  };
+}
+export async function contentHarness() {
+  const media = new TestMedia(),
+    messages: MediaMessage[] = [],
+    callbacks = new Map<string, () => void>();
+  const context = contentContext(media, messages, callbacks),
+    code = await bundledContent();
+  const rerun = () => {
+    runInNewContext(code, context);
+  };
+  rerun();
+  return { media, messages, callbacks, rerun };
+}

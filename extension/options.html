@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Activity Tracker</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Activity Tracker</h1>
+      <p>Вкладки и воспроизведение сохраняются в локальном сервисе на этом компьютере.</p>
+      <form id="connection">
+        <label for="token">Ключ отправки событий</label
+        ><input
+          id="token"
+          type="password"
+          autocomplete="off"
+          required
+          minlength="64"
+          maxlength="64"
+        /><label class="check"><input id="enabled" type="checkbox" /> Включить сбор в Chrome</label
+        ><button>Сохранить подключение</button>
+      </form>
+      <hr />
+      <h2>Воспроизведение видео</h2>
+      <p>
+        Разреши доступ к конкретному сайту, чтобы учитывать воспроизведение и паузы, включая видео
+        на втором мониторе. Содержимое переписки и нажатия клавиш не собираются.
+      </p>
+      <form id="permissions">
+        <label for="site">Адрес сайта</label
+        ><input id="site" type="url" placeholder="https://www.youtube.com" required /><button>
+          Разрешить для этого сайта
+        </button>
+      </form>
+      <ul id="sites"></ul>
+      <hr />
+      <h2>Действия в чатах и на страницах</h2>
+      <p>
+        Учитываются действия только в активной вкладке: движение мыши, прокрутка и ввод. Через 5
+        минут без действий учёт приостанавливается. Текст сообщений и нажатые клавиши не
+        сохраняются. Добавь сюда ВК или веб-версию Telegram отдельно от видеосайтов.
+      </p>
+      <form id="interaction-permissions">
+        <label for="interaction-site">Адрес сайта</label
+        ><input id="interaction-site" type="url" placeholder="https://vk.com" required /><button>
+          Включить проверку действий
+        </button>
+      </form>
+      <ul id="interaction-sites"></ul>
+      <p id="status" role="status"></p>
+      <script type="module" src="options.js"></script>
+    </main>
+  </body>
+</html>

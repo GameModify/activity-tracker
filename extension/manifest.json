@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "minimum_chrome_version": "120",
+  "name": "Activity Tracker",
+  "version": "0.4.0",
+  "description": "Локальный учёт вкладок и воспроизведения видео",
+  "permissions": ["storage", "tabs", "idle", "scripting", "alarms"],
+  "host_permissions": ["http://127.0.0.1:3536/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "options_page": "options.html",
+  "action": { "default_title": "Текущая активность", "default_popup": "popup.html" }
+}
