@@ -1,3 +1,4 @@
+import { ruleVersion } from './rule-version.ts';
 import type { Express } from 'express';
 import { z } from 'zod';
 import { ruleSchema } from '../../domain/contracts.ts';
@@ -18,11 +19,17 @@ export function readRoutes(app: Express, runtime: TrackingRuntime): void {
     });
   });
   app.get('/v1/rules', (_req, res) => {
-    res.json(runtime.store.rules());
+    const rules = runtime.store.rules();
+    res.setHeader('ETag', ruleVersion(rules));
+    res.json(rules);
   });
 }
 export function controlRoutes(app: Express, runtime: TrackingRuntime): void {
   app.put('/v1/rules', (req, res) => {
+    if (req.headers['if-match'] && req.headers['if-match'] !== ruleVersion(runtime.store.rules())) {
+      res.status(409).json({ error: 'Правила изменились. Повтори сохранение.' });
+      return;
+    }
     runtime.store.replaceRules(ruleSchema.array().max(200).parse(req.body));
     res.json({ ok: true });
   });

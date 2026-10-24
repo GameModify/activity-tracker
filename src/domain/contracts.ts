@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { validFolder } from './paths.ts';
 export const resourceSchema = z.object({
+  media_creator: z.string().max(200).optional(),
+  media_id: z.string().max(100).optional(),
   website: z.string().max(253).optional(),
   project: z.string().trim().min(1).max(100).optional(),
   resource_id: z.string().max(1000).optional(),
@@ -111,3 +113,11 @@ export const browserPreferencesSchema = z.object({
     .default(''),
 });
 export type BrowserPreferences = z.infer<typeof browserPreferencesSchema>;
+
+export {
+  contentLabelSchema,
+  videoIdentitySchema,
+  videoChoiceSchema,
+  videoLabelsSchema,
+} from './content-labels.ts';
+export type { ContentLabel, VideoIdentity, VideoChoice, VideoLabels } from './content-labels.ts';

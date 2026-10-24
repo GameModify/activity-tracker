@@ -1,3 +1,4 @@
+import { inspectYouTube } from './youtube-registration.ts';
 import { inspectInteractions } from './interaction-registration.ts';
 import { inspectTab } from './inspection.ts';
 export async function restoreOpenTabs(): Promise<void> {
@@ -5,6 +6,10 @@ export async function restoreOpenTabs(): Promise<void> {
   for (const tab of tabs) {
     if (tab.id === undefined || tab.incognito || tab.discarded || !/^https?:/.test(tab.url ?? ''))
       continue;
-    await Promise.allSettled([inspectTab(tab.id), inspectInteractions(tab.id)]);
+    await Promise.allSettled([
+      inspectTab(tab.id),
+      inspectInteractions(tab.id),
+      inspectYouTube(tab.id),
+    ]);
   }
 }

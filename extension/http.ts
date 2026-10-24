@@ -1,3 +1,6 @@
+import { videoLabelsSchema } from '../src/domain/contracts.ts';
+import type { VideoLabels } from '../src/domain/contracts.ts';
+import type { VideoLabelMessage } from './video-label-model.ts';
 import type { CollectorDiagnostic } from '../src/domain/contracts.ts';
 import { z } from 'zod';
 import { browserPreferencesSchema } from '../src/domain/contracts.ts';
@@ -75,4 +78,23 @@ export async function browserPreferencesRequest(
   if (!response.ok)
     throw new Error('Не удалось получить настройки чата. Проверь ключ и подключение.');
   return browserPreferencesSchema.parse(await response.json());
+}
+
+export async function videoLabelRequest(message: VideoLabelMessage): Promise<VideoLabels> {
+  const config = await settings();
+  const query = new URLSearchParams({ video_id: message.input.video_id });
+  if (message.input.creator) query.set('creator', message.input.creator);
+  const response = await fetch(
+    'http://127.0.0.1:3536/v1/video-labels' + (message.choice ? '' : '?' + query.toString()),
+    {
+      method: message.choice ? 'POST' : 'GET',
+      headers: { Authorization: 'Bearer ' + config.token, 'Content-Type': 'application/json' },
+      body: message.choice ? JSON.stringify({ ...message.input, ...message.choice }) : undefined,
+      signal: AbortSignal.timeout(3000),
+      redirect: 'error',
+    },
+  );
+  if (!response.ok)
+    throw new Error('Не удалось сохранить категорию. Обнови список и попробуй ещё раз.');
+  return videoLabelsSchema.parse(await response.json());
 }

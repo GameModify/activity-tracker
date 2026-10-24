@@ -1,4 +1,5 @@
 import type {
+  ContentLabel,
   ActivityInterval,
   Observation,
   Rule,
@@ -12,6 +13,8 @@ export interface OpenChannel {
   signature: string;
 }
 export interface TrackingStore {
+  labels(): ContentLabel[];
+  replaceLabels(labels: ContentLabel[]): void;
   recordDiagnostic(item: CollectorDiagnostic): void;
   diagnostics(): CollectorDiagnostic[];
   deviceId(): string;

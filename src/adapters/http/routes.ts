@@ -1,3 +1,4 @@
+import { labelReadRoutes, labelWriteRoutes } from './content-labels.ts';
 import express from 'express';
 import { browserRoutes } from './browser-routes.ts';
 import type { Request, Response, NextFunction } from 'express';
@@ -53,9 +54,11 @@ export function createHttpApp(runtime: TrackingRuntime, keys: Credentials): expr
   });
   ingestionRoutes(app, runtime, keys);
   browserRoutes(app, runtime, keys.ingest);
+  labelReadRoutes(app, runtime, keys.ingest);
   app.use('/v1', authorize(keys.read));
   readRoutes(app, runtime);
   controlRoutes(app, runtime);
+  labelWriteRoutes(app, runtime);
   errors(app);
   return app;
 }

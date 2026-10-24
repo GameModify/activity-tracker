@@ -14,6 +14,7 @@ export class ContentRuntime {
   port: chrome.runtime.Port | undefined;
   stopped = false;
   listeners: Listener[] = [];
+  cleanups: (() => void)[] = [];
   timer: ReturnType<typeof setInterval> | undefined;
   constructor() {
     try {
@@ -57,14 +58,19 @@ export class ContentRuntime {
     if (this.available() && !invalid) contentDiagnostic(error, 'content-runtime.js');
     this.stop();
   }
-  listen(target: EventTarget, event: string, callback: EventListener): void {
+  listen(target: EventTarget, event: string, callback: EventListener): () => void {
     const guarded = (event: Event) => {
       this.dispatch(() => {
         callback(event);
       });
     };
     target.addEventListener(event, guarded, { capture: true, passive: true });
-    this.listeners.push({ target, event, callback: guarded });
+    const listener = { target, event, callback: guarded };
+    this.listeners.push(listener);
+    return () => {
+      target.removeEventListener(event, guarded, true);
+      this.listeners = this.listeners.filter((item) => item !== listener);
+    };
   }
   dispatch(callback: () => void): void {
     if (!this.available()) {
@@ -89,6 +95,7 @@ export class ContentRuntime {
       listener.target.removeEventListener(listener.event, listener.callback, true);
     this.listeners = [];
     this.disconnect();
+    for (const cleanup of this.cleanups.splice(0)) cleanup();
   }
   disconnect(): void {
     try {
@@ -101,7 +108,7 @@ export class ContentRuntime {
   }
 }
 export function installContent(
-  key: 'activityTrackerInteraction' | 'activityTrackerMedia',
+  key: 'activityTrackerInteraction' | 'activityTrackerMedia' | 'activityTrackerYouTube',
   start: (runtime: ContentRuntime) => void,
 ): void {
   const previous = window[key];
@@ -114,6 +121,7 @@ export function installContent(
 }
 declare global {
   interface Window {
+    activityTrackerYouTube?: ContentRuntime;
     activityTrackerInteraction?: ContentRuntime;
     activityTrackerMedia?: ContentRuntime;
   }

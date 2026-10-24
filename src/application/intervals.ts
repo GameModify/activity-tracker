@@ -9,8 +9,7 @@ import { signature } from '../domain/classify.ts';
 function interval(sample: Observation, rule?: Rule): ActivityInterval {
   return {
     id: randomUUID(),
-    app: sample.app,
-    website: sample.website,
+    ...mediaContext(sample),
     project: rule?.project,
     ...chatContext({ ...sample, title: assistantTitle(sample, rule) }, rule),
     resource_kind: sample.resource_kind,
@@ -62,10 +61,22 @@ export function extend(store: TrackingStore, open: OpenChannel, sample: Observat
 }
 
 function intervalActivity(sample: Observation, rule?: Rule): string | null {
+  const youtube =
+    sample.kind === 'media' && /(^|\.)youtube\.com$/.test(URL.parse(sample.url)?.hostname ?? '');
+  if (youtube && (!rule || (rule.field === 'kind' && rule.priority <= 10))) return 'youtube';
   if (rule) return rule.activity;
   const assistant = assistantActivity(sample);
   if (assistant) return assistant;
   if (sample.kind === 'voice') return 'voice';
   if (sample.resource_kind === 'document') return 'documents';
   return sample.resource_kind === 'game' ? 'games' : (webActivity(sample) ?? null);
+}
+
+function mediaContext(sample: Observation) {
+  return {
+    app: sample.app,
+    website: sample.website,
+    media_creator: sample.media_creator,
+    media_id: sample.media_id,
+  };
 }

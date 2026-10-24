@@ -13,10 +13,10 @@ function fieldValue(sample: Observation, field: Rule['field']): string {
 export function matchingRule(sample: Observation, rules: Rule[]): Rule | undefined {
   return rules
     .filter((rule) => rule.enabled && (!rule.scope || rule.scope === sample.kind))
-    .sort((a, b) => b.priority - a.priority)
+    .sort((a, b) => ruleRank(b, sample.kind) - ruleRank(a, sample.kind))
     .find((rule) => {
-      const actual = fieldValue(sample, rule.field).toLocaleLowerCase();
-      const expected = rule.value.toLocaleLowerCase();
+      const actual = ruleValue(rule.field, fieldValue(sample, rule.field));
+      const expected = ruleValue(rule.field, rule.value);
       if (rule.operator === 'within')
         return rule.field === 'resource_id' && withinFolder(actual, expected);
       return rule.operator === 'equals' ? actual === expected : actual.includes(expected);
@@ -39,6 +39,8 @@ export function signature(sample: Observation, rule?: Rule): string {
     sample.url,
     sample.resource_id ?? '',
     rule?.id ?? '',
+    rule?.activity ?? '',
+    rule?.project ?? '',
   ].join('\u001f');
 }
 
@@ -49,4 +51,14 @@ function chatResource(value: string): boolean {
 
 export function shouldTrack(sample: Observation, rule?: Rule): boolean {
   return isTracked(sample) && (!requiresChatRule(sample) || Boolean(vkChat(sample.url) && rule));
+}
+
+export function ruleValue(field: Rule['field'], value: string): string {
+  return field === 'media_id' ? value : value.toLocaleLowerCase();
+}
+
+function ruleRank(rule: Rule, kind: Observation['kind']): number {
+  if (kind !== 'media' || rule.operator !== 'equals') return rule.priority;
+  if (rule.field === 'media_id') return 10000 + rule.priority;
+  return rule.field === 'media_creator' ? 5000 + rule.priority : rule.priority;
 }

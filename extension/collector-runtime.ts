@@ -1,3 +1,4 @@
+import { inspectYouTube } from './youtube-registration.ts';
 import { restoreOpenTabs } from './restore-tabs.ts';
 import { inspectInteractions } from './interaction-registration.ts';
 import { inspectTab } from './inspection.ts';
@@ -82,6 +83,7 @@ async function executeCollectorCommand(value: unknown): Promise<CollectorState> 
   try {
     await inspectTab(command.tab_id);
     await inspectInteractions(command.tab_id);
+    await inspectYouTube(command.tab_id);
     return state;
   } catch (error) {
     await reportCollectorError(error);

@@ -1,3 +1,5 @@
+import { initializeLabels, readLabels, writeLabels } from './content-labels.ts';
+import type { ContentLabel } from '../../domain/contracts.ts';
 import { initializeDiagnostics, saveDiagnostic, readDiagnostics } from './diagnostics.ts';
 import type { CollectorDiagnostic } from '../../domain/contracts.ts';
 import { migrateIntervals, migrateRecording, migrateRules } from './migration.ts';
@@ -20,6 +22,14 @@ const openSchema = z.object({
   signature: z.string(),
 });
 const storedInterval = intervalSchema.extend({
+  media_creator: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  media_id: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
   website: z
     .string()
     .nullish()
@@ -50,7 +60,16 @@ export class SqliteStore implements TrackingStore {
     migrateRecording(this.db);
     migrateRules(this.db);
     initializeDiagnostics(this.db);
+    initializeLabels(this.db);
     this.db.prepare('INSERT OR IGNORE INTO settings VALUES (?,?)').run('device_id', randomUUID());
+  }
+  labels(): ContentLabel[] {
+    return readLabels(this.db);
+  }
+  replaceLabels(labels: ContentLabel[]): void {
+    this.atomic(() => {
+      writeLabels(this.db, labels);
+    });
   }
   recordDiagnostic(item: CollectorDiagnostic): void {
     saveDiagnostic(this.db, item);
@@ -130,11 +149,13 @@ export class SqliteStore implements TrackingStore {
   save(interval: ActivityInterval): void {
     this.db
       .prepare(
-        'INSERT OR REPLACE INTO intervals (id,sequence,channel,source,activity,title,start_at,end_at,rule_id,closed,app,resource_id,resource_kind,website,project) VALUES (@id,@sequence,@channel,@source,@activity,@title,@start_at,@end_at,@rule_id,@closed,@app,@resource_id,@resource_kind,@website,@project)',
+        'INSERT OR REPLACE INTO intervals (id,sequence,channel,source,activity,title,start_at,end_at,rule_id,closed,app,resource_id,resource_kind,website,project,media_creator,media_id) VALUES (@id,@sequence,@channel,@source,@activity,@title,@start_at,@end_at,@rule_id,@closed,@app,@resource_id,@resource_kind,@website,@project,@media_creator,@media_id)',
       )
       .run({
         ...interval,
         closed: Number(interval.closed),
+        media_creator: interval.media_creator ?? null,
+        media_id: interval.media_id ?? null,
         website: interval.website ?? null,
         project: interval.project ?? null,
         app: interval.app ?? '',

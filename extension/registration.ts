@@ -1,3 +1,4 @@
+import { registerYouTube } from './youtube-registration.ts';
 import { contentFiles } from './content-build.ts';
 import { registerInteractions } from './interaction-registration.ts';
 import { settings } from './model.ts';
@@ -28,5 +29,6 @@ export async function reconcileSites(): Promise<string[]> {
   const sites = await grantedSites();
   await registerSites(sites);
   await registerInteractions();
+  await registerYouTube();
   return sites;
 }

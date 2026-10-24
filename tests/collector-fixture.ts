@@ -1,3 +1,4 @@
+import { includesSite } from '../extension/sites.ts';
 import type { InteractionState } from '../extension/interaction-model.ts';
 import type { ExtensionSettings } from '../extension/model.ts';
 import type { CollectorState } from '../extension/collector-client.ts';
@@ -79,7 +80,7 @@ export class CollectorFixture {
         onAdded: this.added,
         onRemoved: this.removed,
         contains: ({ origins }: { origins: string[] }) =>
-          Promise.resolve(origins.every((site) => this.allowed.has(site))),
+          Promise.resolve(origins.every((site) => includesSite([...this.allowed], site))),
       },
       storage: this.storage(),
     };

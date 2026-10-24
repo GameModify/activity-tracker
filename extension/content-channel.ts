@@ -1,3 +1,5 @@
+import { videoLabelCommand } from './video-label-command.ts';
+import type { VideoLabelReply } from './video-label-model.ts';
 import type { TabDetails } from './diagnostic-model.ts';
 import { diagnosticCommand } from './collector-diagnostics.ts';
 import { interactionCommand } from './interaction-command.ts';
@@ -5,12 +7,14 @@ import { mediaCommand } from './media-command.ts';
 import { contentChannel } from './content-channel-name.ts';
 export interface ContentPort {
   name: string;
+  postMessage?(message: VideoLabelReply): void;
   sender?: Pick<chrome.runtime.MessageSender, 'id' | 'frameId' | 'url'> & { tab?: TabDetails };
   onMessage: { addListener(callback: (message: unknown) => void): void };
 }
 function accept(port: ContentPort, message: unknown): void {
   const sender = port.sender;
   if (!sender) return;
+  if (videoLabelCommand(port, message)) return;
   const reply = () => undefined;
   if (diagnosticCommand(message, sender, reply)) return;
   if (interactionCommand(message, sender, reply)) return;

@@ -1,10 +1,19 @@
+const intervalColumns = [
+  'app',
+  'resource_id',
+  'resource_kind',
+  'website',
+  'project',
+  'media_creator',
+  'media_id',
+];
 import type { DatabaseSync } from 'node:sqlite';
 export function migrateIntervals(db: DatabaseSync): void {
   const columns = db
     .prepare('PRAGMA table_info(intervals)')
     .all()
     .map((row) => String(row.name));
-  for (const column of ['app', 'resource_id', 'resource_kind', 'website', 'project'])
+  for (const column of intervalColumns)
     if (!columns.includes(column))
       db.exec(
         'ALTER TABLE intervals ADD COLUMN ' +

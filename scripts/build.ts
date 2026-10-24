@@ -20,6 +20,7 @@ await build({
 await build({
   entryPoints: [
     'extension/content.ts',
+    'extension/youtube-content.ts',
     'extension/interaction-content.ts',
     'extension/content-diagnostics.ts',
   ],

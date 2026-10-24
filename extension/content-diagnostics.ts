@@ -5,7 +5,14 @@ function scriptError(event: ErrorEvent): void {
   if (!extensionRoot || !event.filename.startsWith(extensionRoot)) return;
   const script = event.filename.slice(extensionRoot.length).split('?')[0] ?? '';
   const filename = script.split('/').at(-1) ?? '';
-  if (!['interaction-content.js', 'content.js', 'content-diagnostics.js'].includes(filename))
+  if (
+    ![
+      'interaction-content.js',
+      'content.js',
+      'content-diagnostics.js',
+      'youtube-content.js',
+    ].includes(filename)
+  )
     return;
   contentDiagnostic(event.message, script, event.lineno, event.colno);
 }
