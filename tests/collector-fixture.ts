@@ -47,6 +47,7 @@ export class ScriptRegistry {
   }
 }
 export class CollectorFixture {
+  idleState: 'active' | 'idle' | 'locked' = 'active';
   tab = { id: 1, url: 'https://vk.ru/im/convo/123', incognito: false };
   interactionState: InteractionState | undefined;
   config: ExtensionSettings = {
@@ -67,6 +68,7 @@ export class CollectorFixture {
   api() {
     return {
       scripting: this.scripting,
+      idle: { queryState: () => Promise.resolve(this.idleState) },
       tabs: { get: () => Promise.resolve(this.tab) },
       runtime: {
         id: 'test-extension',

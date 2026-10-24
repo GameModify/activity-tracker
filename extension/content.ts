@@ -1,24 +1,16 @@
 import { pageMedia } from './page-media.ts';
-declare global {
-  interface Window {
-    activityTrackerCollectorVersion?: string;
-  }
-}
-function report(): void {
-  void chrome.runtime.sendMessage(pageMedia()).catch(() => undefined);
-}
-function start(): void {
-  for (const event of ['playing', 'pause', 'ended', 'waiting', 'emptied']) {
-    document.addEventListener(event, report, true);
-  }
-  window.addEventListener('pagehide', () => {
-    void chrome.runtime.sendMessage({ ...pageMedia(), playing: false }).catch(() => undefined);
+import { installContent } from './content-runtime.ts';
+import type { ContentRuntime } from './content-runtime.ts';
+function start(runtime: ContentRuntime): void {
+  const report = () => {
+    runtime.send(pageMedia);
+  };
+  for (const event of ['playing', 'pause', 'ended', 'waiting', 'emptied'])
+    runtime.listen(document, event, report);
+  runtime.listen(window, 'pagehide', () => {
+    runtime.send(() => ({ ...pageMedia(), playing: false }));
   });
-  setInterval(report, 5000);
+  runtime.heartbeat(report);
   report();
 }
-const version = chrome.runtime.getManifest().version;
-if (window.activityTrackerCollectorVersion !== version) {
-  window.activityTrackerCollectorVersion = version;
-  start();
-}
+installContent('activityTrackerMedia', start);

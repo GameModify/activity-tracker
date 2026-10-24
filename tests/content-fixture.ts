@@ -1,3 +1,4 @@
+import { TestTransport } from './content-transport-fixture.ts';
 import { build } from 'esbuild';
 import { runInNewContext } from 'node:vm';
 import type { MediaMessage } from '../extension/diagnostic-model.ts';
@@ -15,17 +16,7 @@ function documentFixture(media: TestMedia, callbacks: Map<string, () => void>) {
         ? [media]
         : [{ src: 'https://player.example/embed?secret=hidden' }],
     addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
-  };
-}
-function transportFixture(messages: MediaMessage[]) {
-  return {
-    runtime: {
-      getManifest: () => ({ version: 'test' }),
-      sendMessage: (message: MediaMessage) => {
-        messages.push(message);
-        return Promise.resolve();
-      },
-    },
+    removeEventListener: (name: string) => callbacks.delete(name),
   };
 }
 async function bundledContent(): Promise<string> {
@@ -39,9 +30,18 @@ async function bundledContent(): Promise<string> {
   if (!code) throw new Error('Missing bundled content script');
   return code;
 }
+function timerFixture(callbacks: Map<string, () => void>) {
+  return {
+    setInterval: (callback: () => void) => {
+      callbacks.set('heartbeat', callback);
+      return 1;
+    },
+    clearInterval: () => callbacks.delete('heartbeat'),
+  };
+}
 function contentContext(
   media: TestMedia,
-  messages: MediaMessage[],
+  transport: TestTransport<MediaMessage>,
   callbacks: Map<string, () => void>,
 ) {
   return {
@@ -50,20 +50,21 @@ function contentContext(
     document: documentFixture(media, callbacks),
     window: {
       addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
+      removeEventListener: (name: string) => callbacks.delete(name),
     },
-    chrome: transportFixture(messages),
-    setInterval: (callback: () => void) => callbacks.set('heartbeat', callback),
+    chrome: transport.chrome(),
+    ...timerFixture(callbacks),
   };
 }
 export async function contentHarness() {
   const media = new TestMedia(),
-    messages: MediaMessage[] = [],
+    transport = new TestTransport<MediaMessage>(),
     callbacks = new Map<string, () => void>();
-  const context = contentContext(media, messages, callbacks),
+  const context = contentContext(media, transport, callbacks),
     code = await bundledContent();
   const rerun = () => {
     runInNewContext(code, context);
   };
   rerun();
-  return { media, messages, callbacks, rerun };
+  return { media, messages: transport.messages, transport, callbacks, rerun };
 }

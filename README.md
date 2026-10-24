@@ -103,3 +103,13 @@ Windows-приложения ChatGPT.exe и Codex.exe учитываются к�
 [Chrome idle API](https://developer.chrome.com/docs/extensions/reference/api/idle),
 [IAudioSessionManager2](https://learn.microsoft.com/en-us/windows/win32/api/audiopolicy/nn-audiopolicy-iaudiosessionmanager2),
 [GetProcessId](https://learn.microsoft.com/en-us/windows/win32/api/audiopolicy/nf-audiopolicy-iaudiosessioncontrol2-getprocessid).
+
+Контентные сборщики останавливают свой таймер и удаляют обработчики при потере контекста расширения.
+Повторная установка той же версии не создаёт второй сборщик, новая версия заменяет прежний.
+Синхронная ошибка отправки сообщения обрабатывается вместе с асинхронным отказом;
+временная недоступность service worker допускает повторную отправку следующим heartbeat.
+После обновления старых версий обнови уже открытые вкладки: их прежний код нельзя заменить задним числом.
+
+Чтение активной вкладки ChatGPT может начинаться до первого действия внутри страницы,
+с учётом фокуса окна и пятиминутного системного простоя. После первого действия применяется
+подтверждённое время активности страницы. Предыдущий диалог не передаёт новому свои метаданные.

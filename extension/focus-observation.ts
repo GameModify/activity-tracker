@@ -1,5 +1,7 @@
 import type { TabDetails } from './diagnostic-model.ts';
 import { interactionStateSchema, interactionKey, chatSite } from './interaction-model.ts';
+import type { InteractionState } from './interaction-model.ts';
+import type { Observation } from '../src/domain/contracts.ts';
 import { settings } from './model.ts';
 import { sitePattern } from './sites.ts';
 import { observation } from './observations.ts';
@@ -11,20 +13,37 @@ async function selectedSite(url: string): Promise<boolean> {
     (await chrome.permissions.contains({ origins: [site] }))
   );
 }
-export async function focusObservation(tab: TabDetails, active: boolean) {
+async function currentState(
+  tab: TabDetails,
+  selected: boolean,
+): Promise<InteractionState | undefined> {
+  if (!selected) return undefined;
+  const key = interactionKey(tab.id ?? -1);
+  const state = interactionStateSchema.safeParse((await chrome.storage.session.get(key))[key]).data;
+  const age = Date.now() - (state?.observed_at ?? 0);
+  return state && state.url === tab.url && age >= 0 && age < 15000 ? state : undefined;
+}
+function readingObservation(sample: Observation, state?: InteractionState): Observation {
+  return {
+    ...sample,
+    active: sample.active && (state?.focused ?? true),
+    chatgpt_project: state?.chatgpt_project,
+    recording: Boolean(state?.recording),
+    interaction_at: state?.recording ? 0 : undefined,
+  };
+}
+export async function focusObservation(tab: TabDetails, active: boolean): Promise<Observation> {
   const sample = await observation(tab, 'focus', active),
     selected = await selectedSite(tab.url ?? '');
   if (!selected && (!chatSite(tab.url ?? '') || chatGPTUrl(tab.url ?? ''))) return sample;
-  const key = interactionKey(tab.id ?? -1);
-  const state = interactionStateSchema.safeParse((await chrome.storage.session.get(key))[key]).data;
-  const current =
-    selected && state && state.url === tab.url && Date.now() - state.observed_at < 15000;
+  const state = await currentState(tab, selected);
+  if (chatGPTUrl(tab.url ?? '') && !state?.interaction_at) return readingObservation(sample, state);
   return {
     ...sample,
-    active: sample.active && Boolean(current && state.focused),
-    interaction_at: current ? state.interaction_at : 0,
-    chatgpt_project: current ? state.chatgpt_project : undefined,
-    recording: Boolean(current && state.recording),
-    idle_timeout_ms: 300000 as const,
+    active: sample.active && Boolean(state?.focused),
+    interaction_at: state?.interaction_at ?? 0,
+    chatgpt_project: state?.chatgpt_project,
+    recording: Boolean(state?.recording),
+    idle_timeout_ms: 300000,
   };
 }
