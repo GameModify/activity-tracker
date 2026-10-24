@@ -1,3 +1,4 @@
+import { contentFiles } from './content-build.ts';
 import { registerInteractions } from './interaction-registration.ts';
 import { settings } from './model.ts';
 import { exclusions, selectedPatterns } from './site-selection.ts';
@@ -13,7 +14,7 @@ export async function registerSites(sites: string[]): Promise<void> {
   const script: chrome.scripting.RegisteredContentScript = {
     id: 'media',
     matches: sites,
-    js: ['content-diagnostics.js', 'content.js'],
+    js: contentFiles('content'),
     excludeMatches: exclusions(await settings(), 'sites'),
     allFrames: true,
     runAt: 'document_idle',

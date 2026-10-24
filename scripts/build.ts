@@ -1,6 +1,11 @@
+import { z } from 'zod';
 import { build } from 'esbuild';
-import { mkdir, copyFile } from 'node:fs/promises';
+import { mkdir, copyFile, readFile } from 'node:fs/promises';
 const out = 'dist/chrome';
+const manifest = await readFile('extension/manifest.json', 'utf8');
+const { version } = z
+  .object({ version: z.string().regex(/^\d+\.\d+\.\d+$/) })
+  .parse(JSON.parse(manifest));
 await mkdir(out, { recursive: true });
 await build({
   entryPoints: ['extension/background.ts', 'extension/options.ts', 'extension/popup.ts'],
@@ -18,7 +23,8 @@ await build({
     'extension/interaction-content.ts',
     'extension/content-diagnostics.ts',
   ],
-  outdir: out,
+  outdir: out + '/collectors/' + version,
+  define: { __COLLECTOR_BUILD__: JSON.stringify(version) },
   bundle: true,
   format: 'iife',
   platform: 'browser',

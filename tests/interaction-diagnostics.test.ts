@@ -41,7 +41,11 @@ void test('enabled interaction restoration attaches only the top-frame collector
     fixture.allowed.add(site);
     await inspectInteractions(1);
     assert.deepEqual(fixture.scripting.injections, [
-      { tabId: 1, files: ['content-diagnostics.js', 'interaction-content.js'], frameIds: [0] },
+      {
+        tabId: 1,
+        files: ['collectors/test/content-diagnostics.js', 'collectors/test/interaction-content.js'],
+        frameIds: [0],
+      },
     ]);
     fixture.allowed.delete(site);
     await inspectInteractions(1);

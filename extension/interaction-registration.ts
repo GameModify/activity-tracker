@@ -1,3 +1,4 @@
+import { contentFiles } from './content-build.ts';
 import { sitePattern } from './sites.ts';
 import { settings } from './model.ts';
 import { selectedPatterns, selectedSite, exclusions } from './site-selection.ts';
@@ -15,7 +16,7 @@ export async function registerInteractions(): Promise<void> {
   const script: chrome.scripting.RegisteredContentScript = {
     id: 'interaction',
     matches: sites,
-    js: ['content-diagnostics.js', 'interaction-content.js'],
+    js: contentFiles('interaction-content'),
     excludeMatches: exclusions(await settings(), 'interaction_sites'),
     allFrames: false,
     runAt: 'document_idle',
@@ -31,6 +32,6 @@ export async function inspectInteractions(tabId: number): Promise<void> {
   if (!(await chrome.permissions.contains({ origins: [sitePattern(tab.url ?? '') ?? ''] }))) return;
   await chrome.scripting.executeScript({
     target: { tabId, frameIds: [0] },
-    files: ['content-diagnostics.js', 'interaction-content.js'],
+    files: contentFiles('interaction-content'),
   });
 }

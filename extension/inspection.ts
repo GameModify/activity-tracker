@@ -1,3 +1,4 @@
+import { contentFiles } from './content-build.ts';
 import { z } from 'zod';
 import { inspectDocument } from './document-probe.ts';
 import { grantedSites } from './registration.ts';
@@ -57,6 +58,6 @@ export async function inspectTab(tabId: number): Promise<void> {
   if (frameIds.length)
     await chrome.scripting.executeScript({
       target: { tabId, frameIds },
-      files: ['content-diagnostics.js', 'content.js'],
+      files: contentFiles('content'),
     });
 }

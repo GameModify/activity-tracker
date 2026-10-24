@@ -1,18 +1,12 @@
+import { contentBuild } from './content-build.ts';
 import type { CollectorDiagnostic } from '../src/domain/contracts.ts';
-function version(): string {
-  try {
-    return chrome.runtime.getManifest().version;
-  } catch {
-    return 'invalidated';
-  }
-}
 export function contentDiagnostic(error: unknown, script: string, line = 0, column = 0): void {
   try {
     const diagnostic: CollectorDiagnostic = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       severity: 'error',
-      version: version(),
+      version: contentBuild,
       message: errorMessage(error),
       script: script.slice(0, 100),
       origin: location.origin.slice(0, 300),

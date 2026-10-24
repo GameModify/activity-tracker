@@ -8,6 +8,9 @@ export class TestTransport<T extends MediaMessage | InteractionMessage> {
   rejected = false;
   attempts = 0;
   messages: T[] = [];
+  disconnectListeners = new Set<() => void>();
+  connections = 0;
+  disconnected = false;
   manifest = () => {
     if (this.invalidated) throw new Error('Extension context invalidated.');
     return { version: this.version };
@@ -19,11 +22,38 @@ export class TestTransport<T extends MediaMessage | InteractionMessage> {
     this.messages.push(message);
     return Promise.resolve();
   };
+  disconnect = (): void => {
+    this.disconnected = true;
+    for (const listener of this.disconnectListeners) listener();
+  };
+  connect = () => {
+    this.connections++;
+    this.disconnected = false;
+    return {
+      postMessage: (message: T) => {
+        if (this.rejected) {
+          this.disconnect();
+          return;
+        }
+        void this.send(message);
+      },
+      disconnect: this.disconnect,
+      onDisconnect: {
+        addListener: (listener: () => void) => this.disconnectListeners.add(listener),
+        removeListener: (listener: () => void) => this.disconnectListeners.delete(listener),
+      },
+    };
+  };
   chrome() {
     const current = () =>
       this.missing
         ? undefined
-        : { id: 'tracker-test', getManifest: this.manifest, sendMessage: this.send };
+        : {
+            id: 'tracker-test',
+            getManifest: this.manifest,
+            sendMessage: this.send,
+            connect: this.connect,
+          };
     return {
       get runtime() {
         return current();

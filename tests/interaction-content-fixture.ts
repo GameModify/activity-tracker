@@ -13,7 +13,11 @@ export class InteractionPage {
   url = { href: 'https://vk.com/im?sel=123' };
   transport = new TestTransport<InteractionMessage>();
   callbacks = new Map<string, Set<Callback>>();
-  heartbeat: (() => void) | undefined;
+  timerCallbacks = new Map<number, () => void>();
+  timerId = 0;
+  get heartbeat(): (() => void) | undefined {
+    return [...this.timerCallbacks.values()].at(-1);
+  }
   get messages(): InteractionMessage[] {
     return this.transport.messages;
   }
@@ -40,11 +44,12 @@ export class InteractionPage {
   timers() {
     return {
       setInterval: (callback: () => void) => {
-        this.heartbeat = callback;
-        return 1;
+        const id = ++this.timerId;
+        this.timerCallbacks.set(id, callback);
+        return id;
       },
-      clearInterval: () => {
-        this.heartbeat = undefined;
+      clearInterval: (id: number) => {
+        this.timerCallbacks.delete(id);
       },
     };
   }
@@ -72,7 +77,10 @@ export async function interactionHarness() {
     runInNewContext(code, context);
   };
   attach();
-  return { page, attach };
+  const newContext = () => {
+    runInNewContext(code, page.context());
+  };
+  return { page, attach, newContext };
 }
 function clockDate(clock: () => number) {
   return class extends Date {

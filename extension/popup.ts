@@ -2,12 +2,13 @@ import { renderInteraction, showMedia } from './popup-interaction.ts';
 import { renderFrames } from './popup-frames.ts';
 import { restoreCollector } from './collector-client.ts';
 import type { PopupState } from './popup-model.ts';
-import { popupState, deliveryText, canRepair } from './popup-model.ts';
+import { popupState, deliveryText, canRepair, contentVersionText } from './popup-model.ts';
 import { renderPermissions, renderPlayback } from './popup-view.ts';
 import { element, text } from './ui.ts';
 let rendering = false;
 function renderState(state: PopupState): void {
   text('connection', deliveryText(state));
+  text('content-version', contentVersionText(state, chrome.runtime.getManifest().version));
   renderTab(state);
   renderPlayback(state);
   renderFrames(state);

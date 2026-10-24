@@ -1,3 +1,4 @@
+import { restoreOpenTabs } from './restore-tabs.ts';
 import { inspectInteractions } from './interaction-registration.ts';
 import { inspectTab } from './inspection.ts';
 import { reconcileSites } from './registration.ts';
@@ -53,8 +54,8 @@ export function collectorCommand(
   return true;
 }
 export function installCollector(): void {
-  chrome.runtime.onInstalled.addListener(restoreInBackground);
-  chrome.runtime.onStartup.addListener(restoreInBackground);
+  chrome.runtime.onInstalled.addListener(restoreExistingTabs);
+  chrome.runtime.onStartup.addListener(restoreExistingTabs);
   chrome.permissions.onAdded.addListener(restoreInBackground);
   chrome.permissions.onRemoved.addListener(restoreInBackground);
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -66,7 +67,7 @@ export function installCollector(): void {
     )
       restoreInBackground();
   });
-  restoreInBackground();
+  restoreExistingTabs();
 }
 export async function reportCollectorError(error: unknown): Promise<void> {
   await chrome.storage.session.set({
@@ -89,4 +90,18 @@ async function executeCollectorCommand(value: unknown): Promise<CollectorState> 
       collector_error: error instanceof Error ? error.message : 'Ошибка проверки вкладки',
     };
   }
+}
+
+export async function restoreExisting(): Promise<void> {
+  const state = await restoreMedia();
+  if (state.collector_ready) await restoreOpenTabs();
+}
+function restoreExistingTabs(): void {
+  void restoreExisting().catch(async (error: unknown) => {
+    try {
+      await reportCollectorError(error);
+    } catch {
+      // Chrome can close extension storage during shutdown.
+    }
+  });
 }

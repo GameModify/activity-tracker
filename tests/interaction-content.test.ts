@@ -25,6 +25,7 @@ void test('changing chat resets interaction; reinjection cannot duplicate listen
   attach();
   assert.equal(page.messages.length, before);
   assert.deepEqual(Object.keys(page.messages[0] ?? {}).sort(), [
+    'content_version',
     'focused',
     'interaction_at',
     'type',

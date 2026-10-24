@@ -1,3 +1,4 @@
+import { TestTransport } from './content-transport-fixture.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { interactionHarness } from './interaction-content-fixture.ts';
@@ -21,15 +22,16 @@ void test('synchronous send failure is contained and cannot leave an orphan inte
   assert.equal(page.heartbeat, undefined);
   assert.equal(page.transport.attempts, 2);
 });
-void test('a temporary service-worker rejection can recover without reinjecting the page', async () => {
-  const { page } = await interactionHarness();
-  page.transport.rejected = true;
-  page.heartbeat?.();
-  await Promise.resolve();
+void test('a disconnected worker retires listeners and reinjection restores the collector', async () => {
+  const { page, attach } = await interactionHarness();
+  page.transport.disconnect();
+  assert.equal(page.heartbeat, undefined);
+  assert.equal(page.transport.disconnectListeners.size, 0);
+  attach();
+  assert.equal(page.transport.connections, 2);
   assert.notEqual(page.heartbeat, undefined);
-  page.transport.rejected = false;
-  page.heartbeat?.();
-  assert.equal(page.messages.length, 2);
+  page.event('wheel');
+  assert.equal(page.messages.length, 3);
 });
 void test('a new interaction version replaces previous listeners instead of duplicating them', async () => {
   const { page, attach } = await interactionHarness();
@@ -77,4 +79,39 @@ void test('a removed chrome.runtime API retires video events and heartbeat safel
   assert.doesNotThrow(() => callbacks.get('playing')?.());
   assert.equal(callbacks.size, 0);
   assert.equal(transport.messages.length, 1);
+});
+
+void test('a disconnected media channel removes every callback and can be restored once', async () => {
+  const { callbacks, transport, rerun } = await contentHarness();
+  transport.disconnect();
+  assert.equal(callbacks.size, 0);
+  assert.equal(transport.disconnectListeners.size, 0);
+  rerun();
+  rerun();
+  assert.equal(transport.connections, 2);
+  assert.equal(transport.messages.length, 2);
+});
+void test('collectors attach their build identity independently of the background manifest', async () => {
+  const { page } = await interactionHarness();
+  const { messages } = await contentHarness();
+  assert.equal(page.messages[0]?.content_version, 'development');
+  assert.equal(messages[0]?.content_version, 'development');
+});
+
+void test('old and new isolated contexts retire separately without stopping the replacement timer', async () => {
+  const { page, newContext } = await interactionHarness();
+  const old = page.transport;
+  old.invalidated = true;
+  page.transport = new TestTransport();
+  newContext();
+  assert.equal(page.timerCallbacks.size, 2);
+  assert.doesNotThrow(() => {
+    page.event('wheel');
+  });
+  assert.equal(page.timerCallbacks.size, 1);
+  assert.equal(old.messages.length, 1);
+  assert.equal(page.messages.length, 2);
+  page.time += 5000;
+  page.heartbeat?.();
+  assert.equal(page.messages.length, 3);
 });

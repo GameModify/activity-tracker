@@ -71,3 +71,18 @@ export function canRepair(state: PopupState): boolean {
     !state.current.some((frame) => frame.media_count > 0)
   );
 }
+
+export function contentVersionText(state: PopupState, expected: string): string {
+  const samples = [
+    ...(state.interaction?.state ? [state.interaction.state] : []),
+    ...state.current,
+  ];
+  if (!samples.length) return 'Сборщик вкладки пока не ответил';
+  const versions = [...new Set(samples.map((sample) => sample.content_version ?? 'неизвестна'))];
+  const current = versions.every((version) => version === expected);
+  return (
+    'Сборщик вкладки: ' +
+    versions.join(', ') +
+    (current ? ' · актуален' : ' · требуется обновление')
+  );
+}

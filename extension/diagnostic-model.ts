@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export const mediaMessageSchema = z.object({
   type: z.literal('media'),
+  content_version: z.string().max(50).optional(),
   media_creator: z.string().max(200).optional(),
   media_id: z.string().max(100).optional(),
   position_seconds: z.number().nonnegative().optional(),

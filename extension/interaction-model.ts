@@ -2,6 +2,7 @@ import { observationSchema } from '../src/domain/contracts.ts';
 import { z } from 'zod';
 export const interactionMessageSchema = z.object({
   type: z.literal('interaction'),
+  content_version: z.string().max(50).optional(),
   recording: z.boolean().optional(),
   chatgpt_project: observationSchema.shape.chatgpt_project,
   url: z.string().max(8192),

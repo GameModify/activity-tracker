@@ -50,6 +50,8 @@ export class CollectorFixture {
   idleState: 'active' | 'idle' | 'locked' = 'active';
   tab = { id: 1, url: 'https://vk.ru/im/convo/123', incognito: false };
   interactionState: InteractionState | undefined;
+  tabs: Pick<chrome.tabs.Tab, 'id' | 'url' | 'incognito' | 'discarded'>[] = [];
+  missingTabs = new Set<number>();
   config: ExtensionSettings = {
     enabled: true,
     token: 'a'.repeat(64),
@@ -71,7 +73,7 @@ export class CollectorFixture {
     return {
       scripting: this.scripting,
       idle: { queryState: () => Promise.resolve(this.idleState) },
-      tabs: { get: () => Promise.resolve(this.tab) },
+      tabs: this.tabApi(),
       runtime: this.runtime(),
       permissions: {
         onAdded: this.added,
@@ -80,6 +82,15 @@ export class CollectorFixture {
           Promise.resolve(origins.every((site) => this.allowed.has(site))),
       },
       storage: this.storage(),
+    };
+  }
+  tabApi() {
+    return {
+      get: (id: number) =>
+        this.missingTabs.has(id)
+          ? Promise.reject(new Error('No tab with id'))
+          : Promise.resolve(this.tabs.find((tab) => tab.id === id) ?? this.tab),
+      query: () => Promise.resolve(this.tabs),
     };
   }
   runtime() {

@@ -1,3 +1,5 @@
+import { contentBuild } from './content-build.ts';
+import { contentChannel } from './content-channel-name.ts';
 import { contentDiagnostic } from './content-report.ts';
 import type { MediaMessage } from './diagnostic-model.ts';
 import type { InteractionMessage } from './interaction-model.ts';
@@ -8,37 +10,48 @@ interface Listener {
 }
 export class ContentRuntime {
   version = '';
+  api: typeof chrome.runtime | undefined;
+  port: chrome.runtime.Port | undefined;
   stopped = false;
   listeners: Listener[] = [];
   timer: ReturnType<typeof setInterval> | undefined;
   constructor() {
     try {
-      this.version = chrome.runtime.getManifest().version;
+      this.api = chrome.runtime;
+      this.version = this.api.getManifest().version;
+      this.port = this.api.connect({ name: contentChannel });
+      this.port.onDisconnect.addListener(this.disconnected);
     } catch {
-      this.stopped = true;
+      this.stop();
     }
   }
   available(): boolean {
     if (this.stopped) return false;
     try {
-      return Boolean(chrome.runtime.id) && chrome.runtime.getManifest().version === this.version;
+      return Boolean(chrome.runtime.id) && this.api?.getManifest().version === this.version;
     } catch {
       return false;
     }
   }
   send(snapshot: () => MediaMessage | InteractionMessage): void {
-    if (!this.available()) {
+    if (!this.available() || !this.port) {
       this.stop();
       return;
     }
     try {
-      void chrome.runtime.sendMessage(snapshot()).catch(() => {
-        if (!this.available()) this.stop();
-      });
+      this.port.postMessage({ ...snapshot(), content_version: contentBuild });
     } catch (error) {
       this.failed(error);
     }
   }
+  disconnected = (): void => {
+    try {
+      if (this.api) Reflect.get(this.api, 'lastError');
+    } catch {
+      // Chrome may already have invalidated this content context.
+    }
+    this.stop();
+  };
   failed(error: unknown): void {
     const invalid = error instanceof Error && /context invalidated/i.test(error.message);
     if (this.available() && !invalid) contentDiagnostic(error, 'content-runtime.js');
@@ -75,6 +88,16 @@ export class ContentRuntime {
     for (const listener of this.listeners)
       listener.target.removeEventListener(listener.event, listener.callback, true);
     this.listeners = [];
+    this.disconnect();
+  }
+  disconnect(): void {
+    try {
+      this.port?.onDisconnect.removeListener(this.disconnected);
+      this.port?.disconnect();
+    } catch {
+      // The extension can be disabled before its listeners finish retiring.
+    }
+    this.port = undefined;
   }
 }
 export function installContent(

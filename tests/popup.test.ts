@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshFrames, playback } from '../extension/diagnostic-model.ts';
 import { nextFrame } from '../extension/frame-state.ts';
-import { deliveryText, elapsed, probeText } from '../extension/popup-model.ts';
+import { deliveryText, elapsed, probeText, contentVersionText } from '../extension/popup-model.ts';
 import { sitePattern } from '../extension/sites.ts';
 import { frames, recordFrame, removeTab } from '../extension/diagnostics.ts';
 import { frame, popup, timestamp } from './popup-fixture.ts';
@@ -89,4 +89,12 @@ void test('popup distinguishes missing registration, registration errors and an 
     /встроенный плеер/,
   );
   assert.equal(probeText(popup({ current: [frame()] })), 'Плеер обнаружен');
+});
+
+void test('popup reports the loaded content build rather than trusting the background version', () => {
+  assert.match(contentVersionText(popup(), '0.5.2'), /пока не ответил/);
+  const current = popup({ current: [frame({ content_version: '0.5.2' })] });
+  assert.equal(contentVersionText(current, '0.5.2'), 'Сборщик вкладки: 0.5.2 · актуален');
+  const old = popup({ current: [frame({ content_version: '0.5.1' }), frame()] });
+  assert.match(contentVersionText(old, '0.5.2'), /0.5.1, неизвестна · требуется обновление/);
 });

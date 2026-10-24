@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "minimum_chrome_version": "120",
   "name": "Activity Tracker",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Локальный учёт вкладок и воспроизведения видео",
   "permissions": ["storage", "tabs", "idle", "scripting", "alarms"],
   "host_permissions": ["http://127.0.0.1:3536/*"],

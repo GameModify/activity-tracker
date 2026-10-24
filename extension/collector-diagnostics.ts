@@ -20,7 +20,7 @@ export async function saveCollectorDiagnostic(item: CollectorDiagnostic): Promis
 }
 export function diagnosticCommand(
   value: unknown,
-  sender: chrome.runtime.MessageSender,
+  sender: Pick<chrome.runtime.MessageSender, 'id' | 'url'> & { tab?: { incognito: boolean } },
   reply: (result: { ok: boolean }) => void,
 ): boolean {
   const input = messageSchema.safeParse(value);

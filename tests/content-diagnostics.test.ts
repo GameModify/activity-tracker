@@ -43,6 +43,12 @@ async function diagnosticPage(): Promise<DiagnosticPage> {
   runInNewContext(code, page.context());
   return page;
 }
+const collectorError: DiagnosticEvent = {
+  filename: 'chrome-extension://tracker/collectors/0.5.2/content.js',
+  message: 'Collector failure',
+  lineno: 42,
+  colno: 3,
+};
 void test('the error journal ignores website scripts even when their filename matches the collector', async () => {
   const page = await diagnosticPage(),
     report = page.callbacks.get('error');
@@ -53,13 +59,9 @@ void test('the error journal ignores website scripts even when their filename ma
     colno: 1,
   });
   assert.equal(page.messages.length, 0);
-  report?.({
-    filename: 'chrome-extension://tracker/content.js',
-    message: 'Collector failure',
-    lineno: 42,
-    colno: 3,
-  });
+  report?.(collectorError);
   assert.equal(page.messages.length, 1);
   assert.equal(page.messages[0]?.diagnostic.line, 42);
   assert.equal(page.messages[0].diagnostic.message, 'Collector failure');
+  assert.equal(page.messages[0].diagnostic.script, 'collectors/0.5.2/content.js');
 });

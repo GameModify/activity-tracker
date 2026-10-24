@@ -1,3 +1,4 @@
+import { connectContent } from './content-channel.ts';
 import { diagnosticCommand } from './collector-diagnostics.ts';
 import { collectorCommand, installCollector } from './collector-runtime.ts';
 import { settings } from './model.ts';
@@ -29,6 +30,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
     mediaCommand(message, sender, reply)
   );
 });
+chrome.runtime.onConnect.addListener(connectContent);
 installCollector();
 chrome.alarms.onAlarm.addListener(() => {
   void collectFocus();
