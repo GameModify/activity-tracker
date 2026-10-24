@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import type { Observation } from '../../domain/contracts.ts';
 import type { DesktopCollector } from '../../application/ports.ts';
 interface WindowsApi {
+  isProcessRunning(pid: number): boolean;
   idleMilliseconds(): number;
   isRecording(app: string): boolean;
   foregroundWindow(): ForegroundWindow | undefined;
@@ -15,7 +16,7 @@ export async function windowsCollector(
 ): Promise<DesktopCollector | undefined> {
   if (process.platform !== 'win32') return undefined;
   const api: WindowsApi = await import('./native.ts');
-  return { sample: () => sample(api, probe) };
+  return { sample: () => sample(api, probe), processRunning: (pid) => api.isProcessRunning(pid) };
 }
 function sample(api: WindowsApi, probe?: DesktopProbe): Observation {
   const window = api.foregroundWindow();
@@ -40,6 +41,7 @@ function sample(api: WindowsApi, probe?: DesktopProbe): Observation {
 
 function presentationMetadata(window?: ForegroundWindow) {
   return {
+    process_id: window?.process_id,
     fullscreen: window?.fullscreen,
     monitor: window?.monitor,
     game_candidate: Boolean(window?.fullscreen && potentialGame(window.app)),

@@ -17,6 +17,7 @@ export const observationSchema = z.object({
   chatgpt_project: z
     .object({ id: z.string().regex(/^g-p-[a-f0-9]{32}$/), name: z.string().trim().min(1).max(100) })
     .optional(),
+  process_id: z.number().int().positive().max(4294967295).optional(),
   fullscreen: z.boolean().optional(),
   game_candidate: z.boolean().optional(),
   monitor: z.enum(['primary', 'secondary']).optional(),
@@ -35,7 +36,7 @@ export const observationSchema = z.object({
   position_seconds: z.number().nonnegative().optional(),
   duration_seconds: z.number().nonnegative().optional(),
   interaction_at: z.number().int().nonnegative().optional(),
-  idle_timeout_ms: z.literal(300000).optional(),
+  idle_timeout_ms: z.union([z.literal(120000), z.literal(300000)]).optional(),
   website: resourceSchema.shape.website,
   resource_id: resourceSchema.shape.resource_id,
   resource_kind: resourceSchema.shape.resource_kind,

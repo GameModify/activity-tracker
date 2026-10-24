@@ -1,5 +1,6 @@
 import path from 'node:path';
 export interface ForegroundWindow {
+  process_id?: number;
   app: string;
   title: string;
   app_path?: string;

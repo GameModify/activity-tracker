@@ -31,6 +31,23 @@ const processImage = kernel.func(
 const closeHandle = kernel.func('bool __stdcall CloseHandle(uintptr_t)') as (
   handle: number,
 ) => boolean;
+const waitForProcess = kernel.func('uint32 __stdcall WaitForSingleObject(uintptr_t, uint32)') as (
+  handle: number,
+  timeout: number,
+) => number;
+export function isProcessRunning(pid: number): boolean {
+  const handle = openProcess(0x100000, false, pid);
+  if (!handle) return false;
+  try {
+    return waitForProcess(handle, 0) === 0x102;
+  } finally {
+    closeHandle(handle);
+  }
+}
+function processId(window: number): number {
+  const pid = [0];
+  return windowPid(window, pid) ? (pid[0] ?? 0) : 0;
+}
 export function idleMilliseconds(): number {
   const info = { cbSize: 8, dwTime: 0 };
   if (!lastInput(info)) throw new Error('Cannot query user input state');
@@ -70,6 +87,7 @@ export function foregroundWindow(): ForegroundWindow | undefined {
   return {
     app,
     app_path,
+    process_id: processId(handle),
     ...windowPresentation(handle),
     handle,
     title: text.toString('utf16le', 0, Math.max(0, length) * 2).slice(0, 500),

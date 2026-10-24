@@ -35,6 +35,7 @@ export interface TrackingStore {
   atomic<T>(operation: () => T): T;
 }
 export interface DesktopCollector {
+  processRunning?(pid: number): boolean;
   sample(): Observation | undefined;
   status?(): { state: 'connected' | 'disconnected' | 'unknown'; observed_at: number };
 }

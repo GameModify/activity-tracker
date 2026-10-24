@@ -61,13 +61,18 @@ export class TrackingRuntime {
         : undefined;
       if (sample) {
         this.foreground = sample;
-        for (const observation of this.games.observe(sample)) this.accept(observation);
+        for (const observation of this.gameObservations(sample)) this.accept(observation);
         this.desktopAt = sample.timestamp;
       }
       this.desktopError = false;
     } catch {
       this.desktopError = true;
     }
+  }
+  gameObservations(sample: Observation): Observation[] {
+    const pid = this.games.lastGame?.process_id;
+    const running = pid === undefined ? true : (this.collector?.processRunning?.(pid) ?? true);
+    return this.games.observe(sample, running);
   }
   pollVoice(): void {
     try {

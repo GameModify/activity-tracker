@@ -51,7 +51,7 @@ void test('fullscreen geometry uses the whole monitor, including a secondary mon
   assert.equal(potentialGame('WINWORD.EXE'), false);
   assert.equal(potentialGame('example-game.exe'), true);
 });
-void test('confirmed non-Steam games retain their identity and five-minute grace without assuming fullscreen means gaming', () => {
+void test('confirmed non-Steam games retain their identity and two-minute grace without assuming fullscreen means gaming', () => {
   const observed = sample(0, {
     app: 'example.exe',
     resource_id: 'app:example.exe',
@@ -65,6 +65,6 @@ void test('confirmed non-Steam games retain their identity and five-minute grace
   assert.equal(confirmed.title, 'Example');
   const monitor = new GameActivity();
   monitor.observe(confirmed);
-  for (let offset = 5000; offset <= 300000; offset += 5000) monitor.observe(sample(offset));
+  for (let offset = 5000; offset <= 120000; offset += 5000) monitor.observe(sample(offset));
   assert.equal(monitor.current?.active, false);
 });

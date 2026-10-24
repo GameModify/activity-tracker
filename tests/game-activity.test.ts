@@ -32,22 +32,22 @@ void test('short Alt+Tab keeps one game interval while other foreground activity
     assert.equal(runtime.status().game?.active, true);
   });
 });
-void test('five minutes away pauses at the deadline and returning starts a separate actual segment', () => {
+void test('two minutes away pauses at the deadline and returning starts a separate actual segment', () => {
   withStore((store) => {
-    const observations = [game(0), ...away(315000)];
+    const observations = [game(0), ...away(135000)];
     const runtime = sequence(store, observations);
     while (observations.length) runtime.pollDesktop();
     const finished = store.intervals(0, 100).find((item) => item.resource_kind === 'game');
-    assert.equal(finished?.end_at, start + 300000);
+    assert.equal(finished?.end_at, start + 120000);
     assert.equal(finished.closed, true);
     assert.equal(runtime.status().game?.active, false);
-    observations.push(game(320000), game(325000));
+    observations.push(game(140000), game(145000));
     while (observations.length) runtime.pollDesktop();
     const games = store.intervals(0, 100).filter((item) => item.resource_kind === 'game');
     assert.equal(games.length, 2);
     assert.equal(
       games.reduce((sum, item) => sum + item.end_at - item.start_at, 0),
-      305000,
+      125000,
     );
   });
 });
