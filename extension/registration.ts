@@ -1,15 +1,8 @@
 import { registerInteractions } from './interaction-registration.ts';
 import { settings } from './model.ts';
-import { sitePattern } from './sites.ts';
+import { exclusions, selectedPatterns } from './site-selection.ts';
 export async function grantedSites(): Promise<string[]> {
-  const config = await settings();
-  if (!config.enabled) return [];
-  const granted: string[] = [];
-  for (const site of new Set(config.sites)) {
-    if (sitePattern(site) === site && (await chrome.permissions.contains({ origins: [site] })))
-      granted.push(site);
-  }
-  return granted;
+  return selectedPatterns('sites');
 }
 export async function registerSites(sites: string[]): Promise<void> {
   const registered = await chrome.scripting.getRegisteredContentScripts({ ids: ['media'] });
@@ -20,7 +13,8 @@ export async function registerSites(sites: string[]): Promise<void> {
   const script: chrome.scripting.RegisteredContentScript = {
     id: 'media',
     matches: sites,
-    js: ['content.js'],
+    js: ['content-diagnostics.js', 'content.js'],
+    excludeMatches: exclusions(await settings(), 'sites'),
     allFrames: true,
     runAt: 'document_idle',
     persistAcrossSessions: true,

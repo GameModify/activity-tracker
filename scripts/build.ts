@@ -9,16 +9,22 @@ await build({
   format: 'esm',
   platform: 'browser',
   target: 'chrome120',
-  minify: true,
+  minify: false,
+  sourcemap: true,
 });
 await build({
-  entryPoints: ['extension/content.ts', 'extension/interaction-content.ts'],
+  entryPoints: [
+    'extension/content.ts',
+    'extension/interaction-content.ts',
+    'extension/content-diagnostics.ts',
+  ],
   outdir: out,
   bundle: true,
   format: 'iife',
   platform: 'browser',
   target: 'chrome120',
-  minify: true,
+  minify: false,
+  sourcemap: true,
 });
 for (const file of ['manifest.json', 'options.html', 'options.css', 'popup.html', 'popup.css'])
   await copyFile('extension/' + file, out + '/' + file);

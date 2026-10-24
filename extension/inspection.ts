@@ -4,6 +4,8 @@ import { grantedSites } from './registration.ts';
 import { recordFrame } from './diagnostics.ts';
 import { mediaObservation } from './media-observation.ts';
 import { send } from './http.ts';
+import { settings } from './model.ts';
+import { selectedSite } from './site-selection.ts';
 import { sitePattern } from './sites.ts';
 const probeSchema = z.object({
   origin: z.url(),
@@ -17,6 +19,7 @@ type ProbeResult = chrome.scripting.InjectionResult<unknown>;
 async function recordProbe(result: ProbeResult, tab: chrome.tabs.Tab): Promise<boolean> {
   if (result.result === null) return false;
   const probe = probeSchema.parse(result.result);
+  if (!selectedSite(await settings(), 'sites', probe.origin)) return false;
   const message = {
     type: 'media' as const,
     position_seconds: probe.position_seconds,
@@ -43,7 +46,8 @@ export async function inspectTab(tabId: number): Promise<void> {
   const sites = await grantedSites(),
     tab = await chrome.tabs.get(tabId);
   const current = sitePattern(tab.url ?? '');
-  if (tab.incognito || !current || !sites.includes(current)) return;
+  if (tab.incognito || !current || !selectedSite(await settings(), 'sites', tab.url ?? '')) return;
+  if (!(await chrome.permissions.contains({ origins: [current] }))) return;
   const results = await chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
     func: inspectDocument,
@@ -53,6 +57,6 @@ export async function inspectTab(tabId: number): Promise<void> {
   if (frameIds.length)
     await chrome.scripting.executeScript({
       target: { tabId, frameIds },
-      files: ['content.js'],
+      files: ['content-diagnostics.js', 'content.js'],
     });
 }

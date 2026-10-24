@@ -55,6 +55,8 @@ export class CollectorFixture {
     token: 'a'.repeat(64),
     instance: 'test',
     interaction_sites: [],
+    media_exclusions: [],
+    interaction_exclusions: [],
     sites: ['https://catalog.example/*', 'https://player.example/*'],
   };
   state: CollectorState = { collector_ready: false, collector_error: '', registered_sites: [] };
@@ -70,12 +72,7 @@ export class CollectorFixture {
       scripting: this.scripting,
       idle: { queryState: () => Promise.resolve(this.idleState) },
       tabs: { get: () => Promise.resolve(this.tab) },
-      runtime: {
-        id: 'test-extension',
-        getURL: (path: string) => 'chrome-extension://test-extension/' + path,
-        onInstalled: this.installed,
-        onStartup: this.startup,
-      },
+      runtime: this.runtime(),
       permissions: {
         onAdded: this.added,
         onRemoved: this.removed,
@@ -83,6 +80,15 @@ export class CollectorFixture {
           Promise.resolve(origins.every((site) => this.allowed.has(site))),
       },
       storage: this.storage(),
+    };
+  }
+  runtime() {
+    return {
+      id: 'test-extension',
+      getManifest: () => ({ version: 'test' }),
+      getURL: (path: string) => 'chrome-extension://test-extension/' + path,
+      onInstalled: this.installed,
+      onStartup: this.startup,
     };
   }
   storage() {

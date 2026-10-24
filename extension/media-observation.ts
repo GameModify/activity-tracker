@@ -12,6 +12,8 @@ export async function mediaObservation(tab: TabDetails, playing: boolean): Promi
   )[0];
   return {
     ...(await observation(tab, 'media', playing)),
+    media_creator: frame?.media_creator,
+    media_id: frame?.media_id,
     media_count: frame?.media_count ?? 0,
     position_seconds: frame?.position_seconds,
     duration_seconds: frame?.duration_seconds,

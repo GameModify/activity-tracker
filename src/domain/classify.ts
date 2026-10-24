@@ -12,7 +12,7 @@ function fieldValue(sample: Observation, field: Rule['field']): string {
 }
 export function matchingRule(sample: Observation, rules: Rule[]): Rule | undefined {
   return rules
-    .filter((rule) => rule.enabled)
+    .filter((rule) => rule.enabled && (!rule.scope || rule.scope === sample.kind))
     .sort((a, b) => b.priority - a.priority)
     .find((rule) => {
       const actual = fieldValue(sample, rule.field).toLocaleLowerCase();

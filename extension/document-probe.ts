@@ -7,12 +7,13 @@ export interface DocumentProbe {
   duration_seconds?: number;
 }
 export function inspectDocument(allowedOrigins: string[]): DocumentProbe | null {
-  if (!allowedOrigins.includes(location.origin)) return null;
-  const media = [...document.querySelectorAll<HTMLMediaElement>('video,audio')];
-  const playing = media.some(
-    (item) =>
-      item instanceof HTMLMediaElement && !item.paused && !item.ended && item.readyState >= 3,
+  const allowed =
+    allowedOrigins.includes(location.origin) || allowedOrigins.includes(location.protocol + '//*');
+  if (!allowed) return null;
+  const media = [...document.querySelectorAll<HTMLMediaElement>('video,audio')].filter(
+    (item) => item instanceof HTMLMediaElement,
   );
+  const playing = media.some((item) => !item.paused && !item.ended && item.readyState >= 3);
   const player = media.find((item) => item instanceof HTMLMediaElement && !item.paused) ?? media[0];
   return {
     position_seconds:

@@ -1,28 +1,38 @@
 import { interactionMessageSchema, interactionKey } from './interaction-model.ts';
 import { settings } from './model.ts';
 import { sitePattern } from './sites.ts';
+import { selectedSite } from './site-selection.ts';
 import { focusObservation } from './focus-observation.ts';
 import { send } from './http.ts';
+type InteractionSender = Pick<chrome.runtime.MessageSender, 'id' | 'frameId'> & {
+  tab?: Pick<chrome.tabs.Tab, 'id'>;
+};
 async function accept(message: unknown, tabId: number): Promise<void> {
   const input = interactionMessageSchema.parse(message),
     config = await settings();
   const tab = await chrome.tabs.get(tabId),
     site = sitePattern(tab.url ?? '');
-  if (!config.enabled || tab.incognito || !site || !config.interaction_sites.includes(site)) return;
+  if (
+    !config.enabled ||
+    tab.incognito ||
+    !site ||
+    !selectedSite(config, 'interaction_sites', tab.url ?? '')
+  )
+    return;
   if (input.url !== tab.url || input.interaction_at > Date.now()) return;
   if (!(await chrome.permissions.contains({ origins: [site] }))) return;
   const window = await chrome.windows.get(tab.windowId);
   await chrome.storage.session.set({
     [interactionKey(tabId)]: { ...input, observed_at: Date.now() },
   });
-  send([await focusObservation(tab, tab.active && window.focused)]);
+  if (tab.active && window.focused) send([await focusObservation(tab, true)]);
 }
-function validSender(sender: chrome.runtime.MessageSender): boolean {
+function validSender(sender: InteractionSender): boolean {
   return sender.id === chrome.runtime.id && sender.tab?.id !== undefined && sender.frameId === 0;
 }
 export function interactionCommand(
   value: unknown,
-  sender: chrome.runtime.MessageSender,
+  sender: InteractionSender,
   reply: (value: { ok: boolean }) => void,
 ): boolean {
   if (

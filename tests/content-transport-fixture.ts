@@ -3,6 +3,7 @@ import type { InteractionMessage } from '../extension/interaction-model.ts';
 export class TestTransport<T extends MediaMessage | InteractionMessage> {
   version = 'test';
   invalidated = false;
+  missing = false;
   synchronousFailure = false;
   rejected = false;
   attempts = 0;
@@ -19,6 +20,14 @@ export class TestTransport<T extends MediaMessage | InteractionMessage> {
     return Promise.resolve();
   };
   chrome() {
-    return { runtime: { id: 'tracker-test', getManifest: this.manifest, sendMessage: this.send } };
+    const current = () =>
+      this.missing
+        ? undefined
+        : { id: 'tracker-test', getManifest: this.manifest, sendMessage: this.send };
+    return {
+      get runtime() {
+        return current();
+      },
+    };
   }
 }

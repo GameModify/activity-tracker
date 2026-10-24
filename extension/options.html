@@ -34,7 +34,7 @@
           Разрешить для этого сайта
         </button>
       </form>
-      <ul id="sites"></ul>
+
       <hr />
       <h2>Действия в чатах и на страницах</h2>
       <p>
@@ -48,7 +48,47 @@
           Включить проверку действий
         </button>
       </form>
-      <ul id="interaction-sites"></ul>
+      <hr />
+      <h2>Доступ к сайтам</h2>
+      <p>
+        Можно включить сбор сразу на всех сайтах. Chrome запросит разрешение. Видео учитываются при
+        воспроизведении, действия только в активной вкладке. Для отдельных сайтов сбор можно
+        выключить ниже.
+      </p>
+      <button id="allow-all" type="button">Разрешить сбор на всех сайтах</button>
+      <ul id="site-access" class="site-access"></ul>
+      <hr />
+      <h2>Научный чат ВК</h2>
+      <p>
+        Укажи ID собеседника из адреса /im/convo/123 или /im?sel=123. Научное время учитывается
+        только в этом чате, пока вкладка активна и были действия за последние 5 минут. Пустое поле
+        отключает правило.
+      </p>
+      <form id="science-chat-form">
+        <label for="science-chat">ID чата</label
+        ><input
+          id="science-chat"
+          inputmode="numeric"
+          maxlength="21"
+          placeholder="Например, 123456"
+        /><button>Сохранить научный чат</button>
+      </form>
+      <p>
+        Правила для рабочих приложений, сайтов, видео и проектов доступны в
+        <a href="http://127.0.0.1:3535/settings" target="_blank" rel="noreferrer"
+          >настройках Time &amp; Games</a
+        >.
+      </p>
+      <hr />
+      <details>
+        <summary>Диагностика расширения · версия <span id="version"></span></summary>
+        <p>
+          Журнал содержит версию, домен и техническое сообщение ошибки. Текст страниц и переписки не
+          сохраняется.
+        </p>
+        <button id="refresh-diagnostics" type="button" class="secondary">Обновить журнал</button>
+        <ul id="diagnostics" class="diagnostics"></ul>
+      </details>
       <p id="status" role="status"></p>
       <script type="module" src="options.js"></script>
     </main>

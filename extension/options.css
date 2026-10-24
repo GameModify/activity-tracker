@@ -52,3 +52,42 @@ hr {
 #status {
   min-height: 28px;
 }
+
+.site-access {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 16px;
+}
+.site-access li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 20px;
+  background: light-dark(#fff, #232330);
+  border: 1px solid #86829b;
+  border-radius: 12px;
+}
+.site-access li > div {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.secondary {
+  background: transparent;
+  color: inherit;
+  border-color: #86829b;
+}
+.diagnostics {
+  padding: 0;
+  list-style: none;
+}
+.diagnostics li {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 12px 0;
+  border-bottom: 1px solid #86829b;
+}
+summary {
+  cursor: pointer;
+}

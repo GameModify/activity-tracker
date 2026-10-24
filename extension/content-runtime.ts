@@ -1,3 +1,4 @@
+import { contentDiagnostic } from './content-report.ts';
 import type { MediaMessage } from './diagnostic-model.ts';
 import type { InteractionMessage } from './interaction-model.ts';
 interface Listener {
@@ -34,16 +35,39 @@ export class ContentRuntime {
       void chrome.runtime.sendMessage(snapshot()).catch(() => {
         if (!this.available()) this.stop();
       });
-    } catch {
-      this.stop();
+    } catch (error) {
+      this.failed(error);
     }
   }
+  failed(error: unknown): void {
+    const invalid = error instanceof Error && /context invalidated/i.test(error.message);
+    if (this.available() && !invalid) contentDiagnostic(error, 'content-runtime.js');
+    this.stop();
+  }
   listen(target: EventTarget, event: string, callback: EventListener): void {
-    target.addEventListener(event, callback, { capture: true, passive: true });
-    this.listeners.push({ target, event, callback });
+    const guarded = (event: Event) => {
+      this.dispatch(() => {
+        callback(event);
+      });
+    };
+    target.addEventListener(event, guarded, { capture: true, passive: true });
+    this.listeners.push({ target, event, callback: guarded });
+  }
+  dispatch(callback: () => void): void {
+    if (!this.available()) {
+      this.stop();
+      return;
+    }
+    try {
+      callback();
+    } catch (error) {
+      this.failed(error);
+    }
   }
   heartbeat(callback: () => void): void {
-    this.timer = setInterval(callback, 5000);
+    this.timer = setInterval(() => {
+      this.dispatch(callback);
+    }, 5000);
   }
   stop(): void {
     this.stopped = true;

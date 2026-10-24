@@ -3,6 +3,8 @@ import type { MediaMessage, TabDetails } from './diagnostic-model.ts';
 import { recordFrame } from './diagnostics.ts';
 import { mediaObservation } from './media-observation.ts';
 import { send } from './http.ts';
+import { sitePattern } from './sites.ts';
+import { selectedSite } from './site-selection.ts';
 import { settings } from './model.ts';
 import { reportCollectorError } from './collector-runtime.ts';
 type MediaSender = Pick<chrome.runtime.MessageSender, 'id' | 'frameId' | 'url'> & {
@@ -16,7 +18,10 @@ async function acceptMedia(
   sender: MediaSender,
   tabId: number,
 ): Promise<void> {
-  if (!(await settings()).enabled) return;
+  const config = await settings();
+  if (!config.enabled || !selectedSite(config, 'sites', sender.url ?? '')) return;
+  if (!(await chrome.permissions.contains({ origins: [sitePattern(sender.url ?? '') ?? ''] })))
+    return;
   const tab = await chrome.tabs.get(tabId);
   if (tab.incognito) return;
   const playing = await recordFrame(sample, { frameId: sender.frameId, url: sender.url }, tab);

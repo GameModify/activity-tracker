@@ -12,6 +12,7 @@ export class TrackingRuntime {
   paused: boolean;
   desktopAt: number | null = null;
   browserAt: number | null = null;
+  browserVersion: string | null = null;
   browserFocus: Observation | undefined;
   desktopError = false;
   store: TrackingStore;
@@ -41,6 +42,7 @@ export class TrackingRuntime {
     this.playback.accept(sample);
     if (sample.source === 'chrome') {
       this.browserAt = sample.timestamp;
+      if (sample.collector_version) this.browserVersion = sample.collector_version;
       if (sample.kind === 'focus') this.browserFocus = this.assistantContext(sample);
     }
   }
@@ -96,12 +98,17 @@ export class TrackingRuntime {
         .sort((a, b) => (b?.timestamp ?? 0) - (a?.timestamp ?? 0))[0] ?? null
     );
   }
+  foregroundRule() {
+    if (!this.foreground || Date.now() - this.foreground.timestamp >= 15000) return null;
+    return matchingRule(this.foreground, this.store.rules()) ?? null;
+  }
   status() {
     return {
       api_version: 1,
       assistant: this.assistant(),
       game: this.paused ? null : (this.games.current ?? null),
       playback: this.playback.current(),
+      foreground_rule: this.paused ? null : this.foregroundRule(),
       foreground: this.paused ? null : (this.foreground ?? null),
       voice: this.voiceCollector?.status?.() ?? { state: 'unknown', observed_at: 0 },
       device_id: this.store.deviceId(),
@@ -110,6 +117,7 @@ export class TrackingRuntime {
       desktop_error: this.desktopError,
       desktop_at: this.desktopAt,
       browser_at: this.browserAt,
+      browser_version: this.browserVersion,
     };
   }
 }

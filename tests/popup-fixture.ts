@@ -1,3 +1,4 @@
+import { settingsSchema } from '../extension/model.ts';
 import type { FrameStatus } from '../extension/diagnostic-model.ts';
 import type { PopupState } from '../extension/popup-model.ts';
 export const timestamp = 100000;
@@ -17,13 +18,13 @@ export function frame(patch: Partial<FrameStatus> = {}): FrameStatus {
 }
 export function popup(patch: Partial<PopupState> = {}): PopupState {
   return {
-    config: {
+    config: settingsSchema.parse({
       enabled: true,
       token: 'a'.repeat(64),
       instance: 'test',
       interaction_sites: [],
       sites: [],
-    },
+    }),
     tab: undefined,
     interaction: null,
     collector: { collector_ready: true, collector_error: '', registered_sites: [] },

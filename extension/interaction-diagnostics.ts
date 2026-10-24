@@ -1,6 +1,7 @@
 import type { ExtensionSettings } from './model.ts';
 import type { TabDetails } from './diagnostic-model.ts';
 import { sitePattern } from './sites.ts';
+import { selectedSite } from './site-selection.ts';
 import { chatSite, interactionKey, interactionStateSchema } from './interaction-model.ts';
 import type { InteractionState } from './interaction-model.ts';
 export interface InteractionDiagnostic {
@@ -25,7 +26,7 @@ export async function readInteraction(
 ): Promise<InteractionDiagnostic | null> {
   const site = sitePattern(tab?.url ?? '');
   if (!tab || tab.incognito || !site) return null;
-  const selected = config.interaction_sites.includes(site);
+  const selected = selectedSite(config, 'interaction_sites', tab.url ?? '');
   if (!chatSite(tab.url ?? '') && !selected) return null;
   const key = interactionKey(tab.id ?? -1);
   const saved = await chrome.storage.session.get(key);

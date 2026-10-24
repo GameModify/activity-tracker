@@ -1,3 +1,4 @@
+import { webActivity } from '../domain/browser.ts';
 import { assistantActivity, assistantTitle } from '../domain/assistant.ts';
 import { chatContext } from '../domain/chat.ts';
 import { randomUUID } from 'node:crypto';
@@ -9,6 +10,8 @@ function interval(sample: Observation, rule?: Rule): ActivityInterval {
   return {
     id: randomUUID(),
     app: sample.app,
+    website: sample.website,
+    project: rule?.project,
     ...chatContext({ ...sample, title: assistantTitle(sample, rule) }, rule),
     resource_kind: sample.resource_kind,
     sequence: 1,
@@ -64,5 +67,5 @@ function intervalActivity(sample: Observation, rule?: Rule): string | null {
   if (assistant) return assistant;
   if (sample.kind === 'voice') return 'voice';
   if (sample.resource_kind === 'document') return 'documents';
-  return sample.resource_kind === 'game' ? 'games' : null;
+  return sample.resource_kind === 'game' ? 'games' : (webActivity(sample) ?? null);
 }

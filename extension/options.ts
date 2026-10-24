@@ -1,3 +1,7 @@
+import { loadChat, saveChat } from './options-chat.ts';
+import { renderSites } from './options-sites.ts';
+import { renderDiagnostics } from './options-diagnostics.ts';
+import { grantAllSites } from './site-controls.ts';
 import { settings } from './model.ts';
 import { element } from './ui.ts';
 import { grantSite } from './permissions.ts';
@@ -9,16 +13,11 @@ async function load(): Promise<void> {
   const config = await settings();
   token.value = config.token;
   enabled.checked = config.enabled;
-  element('interaction-sites', HTMLUListElement).replaceChildren(
-    ...config.interaction_sites.map(siteItem),
-  );
-  element('sites', HTMLUListElement).replaceChildren(
-    ...config.sites.map((site) => {
-      const item = document.createElement('li');
-      item.textContent = site;
-      return item;
-    }),
-  );
+  await renderSites(() => {
+    handle(load);
+  });
+  await renderDiagnostics();
+  await loadChat();
 }
 async function save(): Promise<void> {
   if (!/^[a-f0-9]{64}$/.test(token.value)) throw new Error('Нужен ключ из 64 символов');
@@ -48,6 +47,17 @@ element('permissions', HTMLFormElement).addEventListener('submit', (event) => {
   event.preventDefault();
   handle(() => grant());
 });
+element('allow-all', HTMLButtonElement).addEventListener('click', () => {
+  handle(async () => {
+    if (await grantAllSites()) {
+      status.textContent = 'Сбор разрешён на всех сайтах. Исключения в списке сохранены.';
+      await load();
+    }
+  });
+});
+element('refresh-diagnostics', HTMLButtonElement).addEventListener('click', () => {
+  handle(renderDiagnostics);
+});
 handle(load);
 
 element('interaction-permissions', HTMLFormElement).addEventListener('submit', (event) => {
@@ -55,8 +65,7 @@ element('interaction-permissions', HTMLFormElement).addEventListener('submit', (
   handle(() => grant('interaction_sites'));
 });
 
-function siteItem(site: string): HTMLLIElement {
-  const item = document.createElement('li');
-  item.textContent = site;
-  return item;
-}
+element('science-chat-form', HTMLFormElement).addEventListener('submit', (event) => {
+  event.preventDefault();
+  handle(saveChat);
+});

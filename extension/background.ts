@@ -1,3 +1,4 @@
+import { diagnosticCommand } from './collector-diagnostics.ts';
 import { collectorCommand, installCollector } from './collector-runtime.ts';
 import { settings } from './model.ts';
 import { mediaCommand } from './media-command.ts';
@@ -22,6 +23,7 @@ async function collectFocus(): Promise<void> {
 }
 chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
   return (
+    diagnosticCommand(message, sender, reply) ||
     collectorCommand(message, sender, reply) ||
     interactionCommand(message, sender, reply) ||
     mediaCommand(message, sender, reply)

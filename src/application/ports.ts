@@ -1,4 +1,9 @@
-import type { ActivityInterval, Observation, Rule } from '../domain/contracts.ts';
+import type {
+  ActivityInterval,
+  Observation,
+  Rule,
+  CollectorDiagnostic,
+} from '../domain/contracts.ts';
 export interface OpenChannel {
   channel: string;
   interval_id: string;
@@ -7,6 +12,8 @@ export interface OpenChannel {
   signature: string;
 }
 export interface TrackingStore {
+  recordDiagnostic(item: CollectorDiagnostic): void;
+  diagnostics(): CollectorDiagnostic[];
   deviceId(): string;
   paused(): boolean;
   setPaused(value: boolean): void;

@@ -60,7 +60,9 @@ export function installCollector(): void {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (
       area === 'local' &&
-      ('sites' in changes || 'interaction_sites' in changes || 'enabled' in changes)
+      ['sites', 'interaction_sites', 'enabled', 'media_exclusions', 'interaction_exclusions'].some(
+        (key) => key in changes,
+      )
     )
       restoreInBackground();
   });

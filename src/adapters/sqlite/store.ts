@@ -1,4 +1,6 @@
-import { migrateIntervals, migrateRecording } from './migration.ts';
+import { initializeDiagnostics, saveDiagnostic, readDiagnostics } from './diagnostics.ts';
+import type { CollectorDiagnostic } from '../../domain/contracts.ts';
+import { migrateIntervals, migrateRecording, migrateRules } from './migration.ts';
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -18,6 +20,14 @@ const openSchema = z.object({
   signature: z.string(),
 });
 const storedInterval = intervalSchema.extend({
+  website: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  project: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
   closed: z.union([z.literal(0), z.literal(1)]),
   resource_id: z
     .string()
@@ -38,7 +48,15 @@ export class SqliteStore implements TrackingStore {
     this.db.exec(schemaSql);
     migrateIntervals(this.db);
     migrateRecording(this.db);
+    migrateRules(this.db);
+    initializeDiagnostics(this.db);
     this.db.prepare('INSERT OR IGNORE INTO settings VALUES (?,?)').run('device_id', randomUUID());
+  }
+  recordDiagnostic(item: CollectorDiagnostic): void {
+    saveDiagnostic(this.db, item);
+  }
+  diagnostics(): CollectorDiagnostic[] {
+    return readDiagnostics(this.db);
   }
   seedRules(): void {
     if (this.db.prepare('SELECT 1 FROM settings WHERE key=?').get('seeded')) return;
@@ -66,16 +84,27 @@ export class SqliteStore implements TrackingStore {
       this.db
         .prepare('SELECT * FROM rules ORDER BY priority DESC,id')
         .all()
-        .map((row) => ({ ...row, enabled: Boolean(row.enabled) })),
+        .map((row) => ({
+          ...row,
+          enabled: Boolean(row.enabled),
+          scope: row.scope ?? undefined,
+          project: row.project ?? undefined,
+        })),
     );
   }
   replaceRules(rules: Rule[]): void {
     this.atomic(() => {
       this.db.exec('DELETE FROM rules');
       const insert = this.db.prepare(
-        'INSERT INTO rules VALUES (@id,@name,@enabled,@field,@operator,@value,@activity,@priority)',
+        'INSERT INTO rules (id,name,enabled,field,operator,value,activity,priority,scope,project) VALUES (@id,@name,@enabled,@field,@operator,@value,@activity,@priority,@scope,@project)',
       );
-      for (const rule of rules) insert.run({ ...rule, enabled: Number(rule.enabled) });
+      for (const rule of rules)
+        insert.run({
+          ...rule,
+          enabled: Number(rule.enabled),
+          scope: rule.scope ?? null,
+          project: rule.project ?? null,
+        });
     });
   }
   hasEvent(id: string): boolean {
@@ -101,11 +130,13 @@ export class SqliteStore implements TrackingStore {
   save(interval: ActivityInterval): void {
     this.db
       .prepare(
-        'INSERT OR REPLACE INTO intervals (id,sequence,channel,source,activity,title,start_at,end_at,rule_id,closed,app,resource_id,resource_kind) VALUES (@id,@sequence,@channel,@source,@activity,@title,@start_at,@end_at,@rule_id,@closed,@app,@resource_id,@resource_kind)',
+        'INSERT OR REPLACE INTO intervals (id,sequence,channel,source,activity,title,start_at,end_at,rule_id,closed,app,resource_id,resource_kind,website,project) VALUES (@id,@sequence,@channel,@source,@activity,@title,@start_at,@end_at,@rule_id,@closed,@app,@resource_id,@resource_kind,@website,@project)',
       )
       .run({
         ...interval,
         closed: Number(interval.closed),
+        website: interval.website ?? null,
+        project: interval.project ?? null,
         app: interval.app ?? '',
         resource_id: interval.resource_id ?? null,
         resource_kind: interval.resource_kind ?? null,

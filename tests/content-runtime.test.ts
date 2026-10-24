@@ -61,3 +61,20 @@ void test('media send failures and same-version reinjection do not leave an obso
   assert.equal(transport.messages.length, 2);
   assert.notEqual(callbacks.get('heartbeat'), undefined);
 });
+
+void test('a removed chrome.runtime API retires interaction listeners without an uncaught sendMessage access', async () => {
+  const { page } = await interactionHarness();
+  page.transport.missing = true;
+  assert.doesNotThrow(() => {
+    page.event('wheel');
+  });
+  assert.equal(page.heartbeat, undefined);
+  assert.equal(page.messages.length, 1);
+});
+void test('a removed chrome.runtime API retires video events and heartbeat safely', async () => {
+  const { callbacks, transport } = await contentHarness();
+  transport.missing = true;
+  assert.doesNotThrow(() => callbacks.get('playing')?.());
+  assert.equal(callbacks.size, 0);
+  assert.equal(transport.messages.length, 1);
+});

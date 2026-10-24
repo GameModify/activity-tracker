@@ -1,6 +1,7 @@
 import express from 'express';
+import { browserRoutes } from './browser-routes.ts';
 import type { Request, Response, NextFunction } from 'express';
-import { observationSchema } from '../../domain/contracts.ts';
+import { observationSchema, collectorDiagnosticSchema } from '../../domain/contracts.ts';
 import type { TrackingRuntime } from '../../application/runtime.ts';
 import type { Credentials } from './security.ts';
 import { authorize, localOnly } from './security.ts';
@@ -18,6 +19,11 @@ function acceptBrowser(req: Request, runtime: TrackingRuntime): void {
 function ingestionRoutes(app: express.Express, runtime: TrackingRuntime, keys: Credentials): void {
   app.get('/health', (_req, res) => {
     res.json({ ok: true, api_version: 1 });
+  });
+  app.post('/v1/diagnostics', authorize(keys.ingest), (req, res) => {
+    const diagnostic = collectorDiagnosticSchema.parse(req.body);
+    runtime.store.recordDiagnostic(diagnostic);
+    res.json({ ok: true });
   });
   app.post('/v1/observations', authorize(keys.ingest), (req, res) => {
     acceptBrowser(req, runtime);
@@ -46,6 +52,7 @@ export function createHttpApp(runtime: TrackingRuntime, keys: Credentials): expr
     next();
   });
   ingestionRoutes(app, runtime, keys);
+  browserRoutes(app, runtime, keys.ingest);
   app.use('/v1', authorize(keys.read));
   readRoutes(app, runtime);
   controlRoutes(app, runtime);

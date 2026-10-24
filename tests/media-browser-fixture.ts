@@ -7,7 +7,8 @@ function mediaApi(session: SessionStorageFixture) {
     sites: ['https://player.example/*'],
   };
   return {
-    runtime: { id: 'test-extension' },
+    runtime: { id: 'test-extension', getManifest: () => ({ version: 'test' }) },
+    permissions: { contains: () => Promise.resolve(true) },
     tabs: { get: () => Promise.resolve(exampleTab) },
     idle: { queryState: () => Promise.resolve('active') },
     storage: { session, local: { get: () => Promise.resolve(config) } },

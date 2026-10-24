@@ -1,4 +1,4 @@
-import { assistantObservation } from '../domain/assistant.ts';
+import { browserObservation } from '../domain/browser.ts';
 import type { Observation } from '../domain/contracts.ts';
 import { shouldTrack, matchingRule, signature } from '../domain/classify.ts';
 import type { TrackingStore } from './ports.ts';
@@ -18,7 +18,7 @@ function apply(store: TrackingStore, sample: Observation): void {
 export function ingest(store: TrackingStore, sample: Observation): void {
   store.atomic(() => {
     if (store.hasEvent(sample.event_id)) return;
-    apply(store, assistantObservation(sample));
+    apply(store, browserObservation(sample));
     store.rememberEvent(sample.event_id, sample.timestamp);
   });
 }

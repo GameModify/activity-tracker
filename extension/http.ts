@@ -1,4 +1,7 @@
+import type { CollectorDiagnostic } from '../src/domain/contracts.ts';
 import { z } from 'zod';
+import { browserPreferencesSchema } from '../src/domain/contracts.ts';
+import type { BrowserPreferences } from '../src/domain/contracts.ts';
 import { observationSchema } from '../src/domain/contracts.ts';
 import type { Observation } from '../src/domain/contracts.ts';
 import { settings } from './model.ts';
@@ -44,4 +47,32 @@ export function send(samples: Observation[]): void {
         connection_error: error instanceof Error ? error.message : 'Не удалось отправить события',
       });
     });
+}
+
+export async function deliverDiagnostic(
+  diagnostic: CollectorDiagnostic,
+  token: string,
+): Promise<void> {
+  const response = await fetch('http://127.0.0.1:3536/v1/diagnostics', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(diagnostic),
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!response.ok) throw new Error('Не удалось передать диагностику');
+}
+
+export async function browserPreferencesRequest(
+  input?: BrowserPreferences,
+): Promise<BrowserPreferences> {
+  const config = await settings();
+  const response = await fetch('http://127.0.0.1:3536/v1/browser-preferences', {
+    method: input ? 'PUT' : 'GET',
+    headers: { Authorization: 'Bearer ' + config.token, 'Content-Type': 'application/json' },
+    body: input ? JSON.stringify(input) : undefined,
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!response.ok)
+    throw new Error('Не удалось получить настройки чата. Проверь ключ и подключение.');
+  return browserPreferencesSchema.parse(await response.json());
 }

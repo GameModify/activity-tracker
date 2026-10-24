@@ -36,3 +36,24 @@ void test('content reports video position separately and omits unknown stream du
   assert.equal(harness.messages.at(-1)?.position_seconds, 3000);
   assert.equal(harness.messages.at(-1)?.duration_seconds, undefined);
 });
+
+void test('pages without media send one discovery state instead of continuous empty observations', async () => {
+  const harness = await contentHarness(false);
+  for (let index = 0; index < 10; index++) harness.callbacks.get('heartbeat')?.();
+  assert.equal(harness.messages.length, 1);
+  harness.media.present = true;
+  harness.callbacks.get('heartbeat')?.();
+  assert.equal(harness.messages.length, 2);
+  assert.equal(harness.messages[1]?.media_count, 1);
+});
+void test('removing a player sends one terminal state and finding it again resumes discovery', async () => {
+  const harness = await contentHarness();
+  harness.media.present = false;
+  harness.callbacks.get('heartbeat')?.();
+  assert.equal(harness.messages.at(-1)?.media_count, 0);
+  harness.callbacks.get('heartbeat')?.();
+  assert.equal(harness.messages.length, 2);
+  harness.media.present = true;
+  harness.callbacks.get('heartbeat')?.();
+  assert.equal(harness.messages.length, 3);
+});

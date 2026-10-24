@@ -3,6 +3,7 @@ import { build } from 'esbuild';
 import { runInNewContext } from 'node:vm';
 import type { MediaMessage } from '../extension/diagnostic-model.ts';
 export class TestMedia {
+  present = true;
   currentTime = 65;
   duration = 120;
   paused = true;
@@ -13,7 +14,9 @@ function documentFixture(media: TestMedia, callbacks: Map<string, () => void>) {
   return {
     querySelectorAll: (selector: string) =>
       selector === 'video,audio'
-        ? [media]
+        ? media.present
+          ? [media]
+          : []
         : [{ src: 'https://player.example/embed?secret=hidden' }],
     addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
     removeEventListener: (name: string) => callbacks.delete(name),
@@ -47,6 +50,7 @@ function contentContext(
   return {
     HTMLMediaElement: TestMedia,
     URL,
+    location: { href: 'https://player.example/embed', origin: 'https://player.example' },
     document: documentFixture(media, callbacks),
     window: {
       addEventListener: (name: string, callback: () => void) => callbacks.set(name, callback),
@@ -56,10 +60,11 @@ function contentContext(
     ...timerFixture(callbacks),
   };
 }
-export async function contentHarness() {
+export async function contentHarness(present = true) {
   const media = new TestMedia(),
     transport = new TestTransport<MediaMessage>(),
     callbacks = new Map<string, () => void>();
+  media.present = present;
   const context = contentContext(media, transport, callbacks),
     code = await bundledContent();
   const rerun = () => {

@@ -6,6 +6,7 @@ function details(tab: TabDetails, kind: Observation['kind']) {
   const title =
     kind === 'media' ? mediaTitle(tab.title ?? '', tab.url ?? '') : (tab.title ?? '').slice(0, 500);
   return {
+    collector_version: chrome.runtime.getManifest().version,
     app: 'chrome.exe',
     title,
     url: safeUrl(tab.url ?? ''),

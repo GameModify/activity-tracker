@@ -1,13 +1,8 @@
-import { settings } from './model.ts';
 import { sitePattern } from './sites.ts';
+import { settings } from './model.ts';
+import { selectedPatterns, selectedSite, exclusions } from './site-selection.ts';
 async function selectedSites(): Promise<string[]> {
-  const config = await settings(),
-    sites: string[] = [];
-  if (!config.enabled) return sites;
-  for (const site of new Set(config.interaction_sites))
-    if (sitePattern(site) === site && (await chrome.permissions.contains({ origins: [site] })))
-      sites.push(site);
-  return sites;
+  return selectedPatterns('interaction_sites');
 }
 export async function registerInteractions(): Promise<void> {
   const sites = await selectedSites();
@@ -20,7 +15,8 @@ export async function registerInteractions(): Promise<void> {
   const script: chrome.scripting.RegisteredContentScript = {
     id: 'interaction',
     matches: sites,
-    js: ['interaction-content.js'],
+    js: ['content-diagnostics.js', 'interaction-content.js'],
+    excludeMatches: exclusions(await settings(), 'interaction_sites'),
     allFrames: false,
     runAt: 'document_idle',
     persistAcrossSessions: true,
@@ -31,10 +27,10 @@ export async function registerInteractions(): Promise<void> {
 
 export async function inspectInteractions(tabId: number): Promise<void> {
   const tab = await chrome.tabs.get(tabId);
-  const site = sitePattern(tab.url ?? '');
-  if (tab.incognito || !site || !(await selectedSites()).includes(site)) return;
+  if (tab.incognito || !selectedSite(await settings(), 'interaction_sites', tab.url ?? '')) return;
+  if (!(await chrome.permissions.contains({ origins: [sitePattern(tab.url ?? '') ?? ''] }))) return;
   await chrome.scripting.executeScript({
     target: { tabId, frameIds: [0] },
-    files: ['interaction-content.js'],
+    files: ['content-diagnostics.js', 'interaction-content.js'],
   });
 }
