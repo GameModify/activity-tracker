@@ -19,35 +19,36 @@ function sequence(store: TrackingStore, observations: Observation[]): TrackingRu
 function away(until: number): Observation[] {
   return Array.from({ length: until / 5000 }, (_, index) => sample((index + 1) * 5000));
 }
-void test('short Alt+Tab keeps one game interval while other foreground activity is tracked', () => {
+void test('short Alt+Tab preserves separate actual segments and excludes the time away', () => {
   withStore((store) => {
     const observations = [game(0), ...away(115000), game(120000)];
     const runtime = sequence(store, observations);
     while (observations.length) runtime.pollDesktop();
     const games = store.intervals(0, 100).filter((item) => item.resource_kind === 'game');
-    assert.equal(games.length, 1);
-    assert.equal(games[0]?.end_at, start + 120000);
-    assert.equal(games[0].closed, false);
+    assert.equal(games.length, 2);
+    assert.equal(games[0]?.end_at, start + 5000);
+    assert.equal(games[1]?.start_at, start + 120000);
+    assert.equal(games[1].closed, false);
     assert.ok(store.intervals(0, 100).some((item) => item.app === 'Code.exe'));
     assert.equal(runtime.status().game?.active, true);
   });
 });
-void test('two minutes away pauses at the deadline and returning starts a separate actual segment', () => {
+void test('two minutes away clears the held state without adding the timeout to elapsed time', () => {
   withStore((store) => {
     const observations = [game(0), ...away(135000)];
     const runtime = sequence(store, observations);
     while (observations.length) runtime.pollDesktop();
     const finished = store.intervals(0, 100).find((item) => item.resource_kind === 'game');
-    assert.equal(finished?.end_at, start + 120000);
+    assert.equal(finished?.end_at, start + 5000);
     assert.equal(finished.closed, true);
-    assert.equal(runtime.status().game?.active, false);
+    assert.equal(runtime.status().game, null);
     observations.push(game(140000), game(145000));
     while (observations.length) runtime.pollDesktop();
     const games = store.intervals(0, 100).filter((item) => item.resource_kind === 'game');
     assert.equal(games.length, 2);
     assert.equal(
       games.reduce((sum, item) => sum + item.end_at - item.start_at, 0),
-      125000,
+      10000,
     );
   });
 });

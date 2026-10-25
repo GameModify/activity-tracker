@@ -10,11 +10,15 @@ export class GameActivity {
     this.lastPoll = sample.timestamp;
     if (sample.resource_kind === 'game') this.lastGame = sample;
     const game = this.heldGame(sample.timestamp);
-    const stopped = !running && sample.resource_kind !== 'game';
-    this.current = stopped ? undefined : game;
-    if (stopped) this.lastGame = undefined;
+    const focused = sample.resource_kind === 'game';
+    const valid = focused || (running && this.recent(sample.timestamp));
+    this.current = valid && game ? { ...game, active: game.active && focused } : undefined;
+    if (!valid) this.lastGame = undefined;
     const foreground = { ...sample, active: sample.active && sample.resource_kind !== 'game' };
-    return game ? [foreground, { ...game, active: game.active && !stopped }] : [foreground];
+    return game ? [foreground, { ...game, active: game.active && valid && focused }] : [foreground];
+  }
+  recent(now: number): boolean {
+    return Boolean(this.lastGame && now - this.lastGame.timestamp < gameIdleTimeout);
   }
   heldGame(now: number): Observation | undefined {
     const game = this.lastGame;

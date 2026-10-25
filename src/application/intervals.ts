@@ -1,3 +1,4 @@
+import { isWebsiteObservation } from '../domain/browser.ts';
 import { webActivity } from '../domain/browser.ts';
 import { assistantActivity, assistantTitle } from '../domain/assistant.ts';
 import { chatContext } from '../domain/chat.ts';
@@ -61,6 +62,7 @@ export function extend(store: TrackingStore, open: OpenChannel, sample: Observat
 }
 
 function intervalActivity(sample: Observation, rule?: Rule): string | null {
+  if (isWebsiteObservation(sample)) return 'web';
   const youtube =
     sample.kind === 'media' && /(^|\.)youtube\.com$/.test(URL.parse(sample.url)?.hostname ?? '');
   if (youtube && (!rule || (rule.field === 'kind' && rule.priority <= 10))) return 'youtube';

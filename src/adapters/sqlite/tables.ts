@@ -1,4 +1,5 @@
 export const schemaSql = [
+  'CREATE TABLE IF NOT EXISTS observation_clocks (channel TEXT PRIMARY KEY,timestamp INTEGER NOT NULL);',
   'PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;',
   'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY,value TEXT NOT NULL);',
   'CREATE TABLE IF NOT EXISTS rules (id TEXT PRIMARY KEY,name TEXT,enabled INTEGER,field TEXT,operator TEXT,value TEXT,activity TEXT,priority INTEGER);',

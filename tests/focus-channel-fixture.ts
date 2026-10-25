@@ -3,7 +3,7 @@ import { settingsSchema } from '../extension/model.ts';
 import type { Observation } from '../src/domain/contracts.ts';
 import type { InteractionState } from '../extension/interaction-model.ts';
 import { interactionCommand } from '../extension/interaction-command.ts';
-class FocusBrowser {
+export class FocusBrowser {
   tab = { id: 1, active: true, windowId: 1, url: 'https://example.org/', incognito: false };
   focused = true;
   state: InteractionState | undefined;

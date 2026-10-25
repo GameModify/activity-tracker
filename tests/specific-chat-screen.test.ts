@@ -66,5 +66,5 @@ void test('confirmed non-Steam games retain their identity and two-minute grace 
   const monitor = new GameActivity();
   monitor.observe(confirmed);
   for (let offset = 5000; offset <= 120000; offset += 5000) monitor.observe(sample(offset));
-  assert.equal(monitor.current?.active, false);
+  assert.equal(monitor.current, undefined);
 });

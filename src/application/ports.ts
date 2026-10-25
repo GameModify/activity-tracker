@@ -23,6 +23,8 @@ export interface TrackingStore {
   channels(): OpenChannel[];
   rules(): Rule[];
   replaceRules(rules: Rule[]): void;
+  lastObserved(channel: string): number;
+  observeAt(channel: string, timestamp: number): void;
   hasEvent(id: string): boolean;
   rememberEvent(id: string, timestamp: number): void;
   channel(id: string): OpenChannel | undefined;
@@ -35,6 +37,7 @@ export interface TrackingStore {
   atomic<T>(operation: () => T): T;
 }
 export interface DesktopCollector {
+  subscribe?(listener: (sample: Observation) => void): () => void;
   processRunning?(pid: number): boolean;
   sample(): Observation | undefined;
   status?(): { state: 'connected' | 'disconnected' | 'unknown'; observed_at: number };

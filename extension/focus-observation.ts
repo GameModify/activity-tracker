@@ -34,8 +34,12 @@ function readingObservation(sample: Observation, state?: InteractionState): Obse
     interaction_at: state?.recording ? 0 : undefined,
   };
 }
-export async function focusObservation(tab: TabDetails, active: boolean): Promise<Observation> {
-  const sample = await observation(tab, 'focus', active),
+export async function focusObservation(
+  tab: TabDetails,
+  active: boolean,
+  timestamp = Date.now(),
+): Promise<Observation> {
+  const sample = await observation(tab, 'focus', active, timestamp),
     selected = await selectedSite(tab.url ?? '');
   if (includesSite((await settings()).interaction_exclusions, tab.url ?? ''))
     return { ...sample, active: false, url: '', title: '' };
@@ -43,6 +47,14 @@ export async function focusObservation(tab: TabDetails, active: boolean): Promis
   const state = await currentState(tab, selected);
   if ((chatGPTUrl(tab.url ?? '') || !chatSite(tab.url ?? '')) && !state?.interaction_at)
     return readingObservation(sample, state);
+  return interactionObservation(sample, selected, state);
+}
+
+function interactionObservation(
+  sample: Observation,
+  selected: boolean,
+  state?: InteractionState,
+): Observation {
   return {
     ...sample,
     web_enabled: selected,

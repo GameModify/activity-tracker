@@ -25,7 +25,7 @@ async function acceptMedia(
   const tab = await chrome.tabs.get(tabId);
   if (tab.incognito) return;
   const playing = await recordFrame(sample, { frameId: sender.frameId, url: sender.url }, tab);
-  send([await mediaObservation(tab, playing)]);
+  send([await mediaObservation(tab, playing, sample.event_at)]);
 }
 
 function mediaInput(value: unknown, sender: MediaSender) {

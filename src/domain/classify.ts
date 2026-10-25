@@ -1,3 +1,5 @@
+import { assistantActivity } from './assistant.ts';
+import { isWebsiteObservation } from './browser.ts';
 import { requiresChatRule, vkChat } from './chat.ts';
 import { withinFolder } from './paths.ts';
 import { engaged } from './engagement.ts';
@@ -26,6 +28,7 @@ export function isTracked(sample: Observation): boolean {
   if (!sample.active) return false;
   if (sample.kind === 'voice') return sample.voice_connected === true;
   if (sample.kind === 'media') return sample.playing;
+  if (isWebsiteObservation(sample)) return engaged(sample);
   if (sample.source === 'chrome' && chatResource(sample.url) && !sample.interaction_at)
     return false;
   return engaged(sample);
@@ -50,7 +53,20 @@ function chatResource(value: string): boolean {
 }
 
 export function shouldTrack(sample: Observation, rule?: Rule): boolean {
-  return isTracked(sample) && (!requiresChatRule(sample) || Boolean(vkChat(sample.url) && rule));
+  const generic =
+    sample.source === 'chrome' &&
+    sample.kind === 'focus' &&
+    sample.web_enabled &&
+    !isWebsiteObservation(sample) &&
+    !rule &&
+    !assistantActivity(sample);
+  return (
+    !generic &&
+    isTracked(sample) &&
+    (isWebsiteObservation(sample) ||
+      !requiresChatRule(sample) ||
+      Boolean(vkChat(sample.url) && rule))
+  );
 }
 
 export function ruleValue(field: Rule['field'], value: string): string {

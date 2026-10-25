@@ -45,7 +45,7 @@ void test('relaunching a closed game starts a fresh segment with the new process
     assert.equal(runtime.status().game?.active, true);
   });
 });
-void test('the same running process survives Alt+Tab but expires after two minutes', () => {
+void test('a running process stays identifiable briefly but never bills Alt+Tab time', () => {
   withStore((store) => {
     const samples = [game(0), ...Array.from({ length: 25 }, (_, i) => sample((i + 1) * 5000))];
     const runtime = new TrackingRuntime(store, {
@@ -54,9 +54,9 @@ void test('the same running process survives Alt+Tab but expires after two minut
     });
     while (samples.length) runtime.pollDesktop();
     const row = store.intervals(0, 100).find((item) => item.resource_kind === 'game');
-    assert.equal(row?.end_at, start + 120000);
+    assert.equal(row?.end_at, start + 5000);
     assert.equal(row.closed, true);
-    assert.equal(runtime.status().game?.active, false);
+    assert.equal(runtime.status().game, null);
   });
 });
 async function nativeLifecycle(): Promise<void> {

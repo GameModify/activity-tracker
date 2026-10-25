@@ -10,6 +10,8 @@ export const resourceSchema = z.object({
 });
 export const observationSchema = z.object({
   web_enabled: z.boolean().optional(),
+  web_active: z.boolean().optional(),
+  recording_app: z.enum(['ChatGPT.exe', 'Codex.exe']).optional(),
   media_creator: z.string().max(200).optional(),
   media_id: z.string().max(100).optional(),
   collector_version: z.string().max(30).optional(),

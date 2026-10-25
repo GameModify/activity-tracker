@@ -70,14 +70,21 @@ function processPath(window: number): string {
   const pid = [0];
   return windowPid(window, pid) && pid[0] ? processExecutable(pid[0]) : '';
 }
+export function recordingApplication(): 'ChatGPT.exe' | 'Codex.exe' | undefined {
+  for (const pid of recordingProcessIds()) {
+    const app = path.win32.basename(processExecutable(pid));
+    if (/^(chatgpt|codex)\.exe$/i.test(app))
+      return /^codex/i.test(app) ? 'Codex.exe' : 'ChatGPT.exe';
+  }
+  return undefined;
+}
 export function isRecording(app: string): boolean {
   if (!/^(chatgpt|codex)\.exe$/i.test(app)) return false;
   return recordingProcessIds().some(
     (pid) => path.win32.basename(processExecutable(pid)).toLowerCase() === app.toLowerCase(),
   );
 }
-export function foregroundWindow(): ForegroundWindow | undefined {
-  const handle = foreground();
+export function foregroundWindow(handle = foreground()): ForegroundWindow | undefined {
   if (!handle) return undefined;
   const text = Buffer.alloc(2048),
     length = windowText(handle, text, 1024);

@@ -63,6 +63,19 @@ export class SqliteStore implements TrackingStore {
     initializeLabels(this.db);
     this.db.prepare('INSERT OR IGNORE INTO settings VALUES (?,?)').run('device_id', randomUUID());
   }
+  lastObserved(channel: string): number {
+    const row = this.db
+      .prepare('SELECT timestamp FROM observation_clocks WHERE channel=?')
+      .get(channel);
+    return row ? z.number().parse(row.timestamp) : (this.channel(channel)?.last_at ?? 0);
+  }
+  observeAt(channel: string, timestamp: number): void {
+    this.db
+      .prepare(
+        'INSERT INTO observation_clocks VALUES (?,?) ON CONFLICT(channel) DO UPDATE SET timestamp=excluded.timestamp',
+      )
+      .run(channel, timestamp);
+  }
   labels(): ContentLabel[] {
     return readLabels(this.db);
   }

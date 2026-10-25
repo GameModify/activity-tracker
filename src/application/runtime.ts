@@ -1,3 +1,5 @@
+import { dictationObservation } from './dictation.ts';
+import { websiteObservation } from '../domain/browser.ts';
 import { matchingRule } from '../domain/classify.ts';
 import { assistantObservation, assistantTitle } from '../domain/assistant.ts';
 import { desktopActivity } from './desktop-activity.ts';
@@ -14,6 +16,8 @@ export class TrackingRuntime {
   browserAt: number | null = null;
   browserVersion: string | null = null;
   browserFocus: Observation | undefined;
+  dictation: Observation | undefined;
+  browser: Observation | undefined;
   desktopError = false;
   store: TrackingStore;
   collector: DesktopCollector | undefined;
@@ -33,6 +37,8 @@ export class TrackingRuntime {
     closeAll(this.store);
     this.playback.items.clear();
     this.games.reset();
+    this.dictation = undefined;
+    this.browser = undefined;
     this.paused = paused;
     this.store.setPaused(paused);
   }
@@ -41,9 +47,12 @@ export class TrackingRuntime {
     ingest(this.store, sample);
     this.playback.accept(sample);
     if (sample.source === 'chrome') {
-      this.browserAt = sample.timestamp;
+      this.browserAt = Math.max(this.browserAt ?? 0, sample.timestamp);
       if (sample.collector_version) this.browserVersion = sample.collector_version;
-      if (sample.kind === 'focus') this.browserFocus = this.assistantContext(sample);
+      if (sample.kind === 'focus' && sample.timestamp > (this.browserFocus?.timestamp ?? 0)) {
+        this.browserFocus = this.assistantContext(sample);
+        this.browser = websiteObservation(sample);
+      }
     }
   }
   tick(): void {
@@ -55,19 +64,23 @@ export class TrackingRuntime {
   pollDesktop(): void {
     if (!this.collector) return;
     try {
-      const observed = this.collector.sample();
-      const sample = observed
-        ? this.assistantContext(desktopActivity(observed, this.store.rules()))
-        : undefined;
+      const sample = this.collector.sample();
       if (sample) {
-        this.foreground = sample;
-        for (const observation of this.gameObservations(sample)) this.accept(observation);
-        this.desktopAt = sample.timestamp;
+        this.observeDesktop(sample);
       }
       this.desktopError = false;
     } catch {
       this.desktopError = true;
     }
+  }
+  observeDesktop(observed: Observation): void {
+    if (this.paused || observed.timestamp <= (this.desktopAt ?? 0)) return;
+    const sample = this.assistantContext(desktopActivity(observed, this.store.rules()));
+    this.foreground = sample;
+    for (const item of this.gameObservations(sample)) this.accept(item);
+    this.dictation = dictationObservation(sample);
+    this.accept(this.dictation);
+    this.desktopAt = sample.timestamp;
   }
   gameObservations(sample: Observation): Observation[] {
     const pid = this.games.lastGame?.process_id;
@@ -92,7 +105,7 @@ export class TrackingRuntime {
   assistant(): Observation | null {
     if (this.paused) return null;
     return (
-      [this.foreground, this.browserFocus]
+      [this.dictation, this.foreground, this.browserFocus]
         .filter(
           (sample) =>
             sample &&
@@ -111,6 +124,7 @@ export class TrackingRuntime {
     return {
       api_version: 1,
       assistant: this.assistant(),
+      browser: this.paused ? null : (this.browser ?? null),
       game: this.paused ? null : (this.games.current ?? null),
       playback: this.playback.current(),
       foreground_rule: this.paused ? null : this.foregroundRule(),

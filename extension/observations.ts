@@ -8,8 +8,8 @@ function details(tab: TabDetails, kind: Observation['kind']) {
   return {
     collector_version: chrome.runtime.getManifest().version,
     app: 'chrome.exe',
-    title,
-    url: safeUrl(tab.url ?? ''),
+    title: tab.incognito ? '' : title,
+    url: tab.incognito ? '' : safeUrl(tab.url ?? ''),
     idle_timeout_ms: 300000 as const,
   };
 }
@@ -17,6 +17,7 @@ export async function observation(
   tab: TabDetails,
   kind: Observation['kind'],
   active: boolean,
+  timestamp = Date.now(),
 ): Promise<Observation> {
   const config = await settings(),
     state = await chrome.idle.queryState(300);
@@ -25,10 +26,22 @@ export async function observation(
     ...details(tab, kind),
     event_id: crypto.randomUUID(),
     channel: 'chrome:' + config.instance + ':' + kind + suffix,
-    timestamp: Date.now(),
+    timestamp,
     source: 'chrome',
     kind,
+    ...activityState(tab, kind, active, state),
+  };
+}
+
+function activityState(
+  tab: TabDetails,
+  kind: Observation['kind'],
+  active: boolean,
+  state: 'active' | 'idle' | 'locked',
+) {
+  return {
     active: active && state !== 'locked' && !tab.incognito,
+    web_active: active && state !== 'locked' && !tab.incognito,
     playing: kind === 'media' && active,
     idle_ms: state === 'active' ? 0 : 300000,
   };

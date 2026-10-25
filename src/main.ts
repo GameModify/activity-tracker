@@ -34,12 +34,16 @@ const server = createHttpApp(runtime, keys).listen(port, '127.0.0.1', () => {
   if (address && typeof address === 'object')
     console.log('Activity Tracker: http://127.0.0.1:' + String(address.port));
 });
+const stopDesktop = collector?.subscribe?.((sample) => {
+  runtime.observeDesktop(sample);
+});
 const timer = setInterval(() => {
   runtime.tick();
 }, 5000);
 runtime.tick();
 function shutdown(): void {
   clearInterval(timer);
+  stopDesktop?.();
   probe.stop();
   server.close(() => {
     store.db.close();
