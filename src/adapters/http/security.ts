@@ -26,10 +26,7 @@ export function authorize(token: string) {
 }
 export function localOnly(req: Request, res: Response, next: NextFunction): void {
   const origin = req.headers.origin;
-  if (
-    req.hostname !== '127.0.0.1' ||
-    (origin && !/^chrome-extension:\/\/[a-p]{32}$/.test(origin))
-  ) {
+  if (!allowedOrigin(req)) {
     res.status(403).json({ error: 'Только локальные клиенты' });
     return;
   }
@@ -42,4 +39,14 @@ export function localOnly(req: Request, res: Response, next: NextFunction): void
     return;
   }
   next();
+}
+
+function allowedOrigin(req: Request): boolean {
+  const origin = req.headers.origin;
+  return (
+    req.hostname === '127.0.0.1' &&
+    (!origin ||
+      origin === 'http://' + (req.get('host') ?? '') ||
+      /^chrome-extension:\/\/[a-p]{32}$/.test(origin))
+  );
 }

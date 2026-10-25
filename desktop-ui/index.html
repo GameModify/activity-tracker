@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Activity Tracker · Настройки</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="logo">◷</span>
+        <div>
+          <h1>Activity Tracker</h1>
+          <p>Локальный сборщик активности</p>
+        </div>
+      </header>
+      <p id="notice" role="status"></p>
+      <form id="auth" class="panel">
+        <h2>Подключение к настройкам</h2>
+        <p>
+          Открывай эту страницу через значок трекера в трее. Если открыл её вручную, укажи ключ read
+          из файла credentials.json в папке данных.
+        </p>
+        <label>Ключ read<input id="key" type="password" required autocomplete="off" /></label
+        ><button>Подключиться</button>
+      </form>
+      <div id="settings" hidden>
+        <section class="panel">
+          <h2 id="state">Проверяем состояние</h2>
+          <p id="collectors"></p>
+          <button id="pause" type="button">Приостановить сбор</button>
+          <p>
+            Сайт и расширение могут работать независимо. Пауза останавливает сбор новых событий; уже
+            сохранённые данные остаются.
+          </p>
+        </section>
+        <section class="panel">
+          <h2>Пауза при бездействии</h2>
+          <form id="idle">
+            <label
+              >Время бездействия, мин<input
+                id="minutes"
+                type="number"
+                inputmode="numeric"
+                min="1"
+                max="30"
+                step="1"
+                required /></label
+            ><button>Сохранить время бездействия</button>
+          </form>
+          <p>
+            От 1 до 30 минут. Видео и голосовые каналы учитываются по состоянию воспроизведения и
+            подключения.
+          </p>
+        </section>
+        <section class="panel">
+          <h2>Подключение сайта</h2>
+          <label>Адрес трекера<input id="endpoint" readonly /></label>
+          <p>
+            В настройках сайта укажи этот адрес и ключ read. Для первого запуска Time &amp; Games
+            открой его отдельно.
+          </p>
+          <button id="copy-read" type="button">Скопировать ключ для сайта</button>
+        </section>
+        <section class="panel">
+          <h2>Расширение Google Chrome</h2>
+          <ol>
+            <li>Открой «Браузерное расширение» в меню трекера.</li>
+            <li>Открой chrome://extensions и включи режим разработчика.</li>
+            <li>Нажми «Загрузить распакованное расширение» и выбери папку chrome.</li>
+            <li>В настройках расширения вставь ключ отправки и включи сбор для нужных сайтов.</li>
+          </ol>
+          <button id="copy-ingest" type="button">Скопировать ключ для расширения</button>
+          <p>Ключ отправки не даёт чтения истории или управления паузой.</p>
+        </section>
+        <details class="panel">
+          <summary>Где хранятся данные</summary>
+          <p id="directory"></p>
+          <p>
+            База, настройки и ключи остаются на этом компьютере. Открыть папку можно через меню
+            трекера в трее.
+          </p>
+        </details>
+      </div>
+    </main>
+  </body>
+</html>

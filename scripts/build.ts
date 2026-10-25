@@ -1,3 +1,4 @@
+import { buildIcons } from './desktop/icons.ts';
 import { z } from 'zod';
 import { build } from 'esbuild';
 import { mkdir, copyFile, readFile } from 'node:fs/promises';
@@ -36,3 +37,18 @@ await build({
 for (const file of ['manifest.json', 'options.html', 'options.css', 'popup.html', 'popup.css'])
   await copyFile('extension/' + file, out + '/' + file);
 console.log('Chrome extension: dist/chrome');
+
+await buildIcons('dist/assets');
+await mkdir('dist/assets/control', { recursive: true });
+await build({
+  entryPoints: ['desktop-ui/main.ts'],
+  outfile: 'dist/assets/control/main.js',
+  bundle: true,
+  platform: 'browser',
+  target: 'chrome120',
+  format: 'esm',
+  minify: true,
+});
+for (const file of ['index.html', 'style.css'])
+  await copyFile('desktop-ui/' + file, 'dist/assets/control/' + file);
+console.log('Desktop assets: dist/assets');

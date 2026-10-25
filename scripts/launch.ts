@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdirSync, openSync, closeSync } from 'node:fs';
+import { mkdirSync, openSync, closeSync, existsSync } from 'node:fs';
 import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..'),
   directory = path.join(root, 'data');
@@ -17,7 +17,13 @@ async function running(): Promise<boolean> {
 if (await running()) console.log('Activity Tracker уже запущен');
 else {
   const log = openSync(path.join(directory, 'service.log'), 'a');
-  const child = spawn(process.execPath, ['src/main.ts'], {
+  const installed = path.join(
+    process.env.LOCALAPPDATA ?? directory,
+    'Programs/ActivityTracker/ActivityTracker.exe',
+  );
+  const command =
+    process.platform === 'win32' && existsSync(installed) ? installed : process.execPath;
+  const child = spawn(command, command === installed ? [] : ['src/main.ts'], {
     cwd: root,
     detached: true,
     windowsHide: true,

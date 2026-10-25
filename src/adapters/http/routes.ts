@@ -1,3 +1,5 @@
+import { controlPanelRoutes } from './control-routes.ts';
+import type { ControlConfiguration } from './control-routes.ts';
 import { preferenceRoutes } from './preferences.ts';
 import { labelReadRoutes, labelWriteRoutes } from './content-labels.ts';
 import express from 'express';
@@ -44,15 +46,14 @@ function errors(app: express.Express): void {
     res.status(400).json({ error: 'Некорректный запрос' });
   });
 }
-export function createHttpApp(runtime: TrackingRuntime, keys: Credentials): express.Express {
+export function createHttpApp(
+  runtime: TrackingRuntime,
+  keys: Credentials,
+  config?: ControlConfiguration,
+): express.Express {
   const app = express();
-  app.disable('x-powered-by');
-  app.use(localOnly);
-  app.use(express.json({ limit: '256kb', strict: true }));
-  app.use((_req, res, next) => {
-    res.setHeader('Cache-Control', 'no-store');
-    next();
-  });
+  middleware(app);
+  controlPanelRoutes(app, keys, config);
   ingestionRoutes(app, runtime, keys);
   browserRoutes(app, runtime, keys.ingest);
   labelReadRoutes(app, runtime, keys.ingest);
@@ -63,4 +64,14 @@ export function createHttpApp(runtime: TrackingRuntime, keys: Credentials): expr
   labelWriteRoutes(app, runtime);
   errors(app);
   return app;
+}
+
+function middleware(app: express.Express): void {
+  app.disable('x-powered-by');
+  app.use(localOnly);
+  app.use(express.json({ limit: '256kb', strict: true }));
+  app.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 }

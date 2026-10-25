@@ -1,3 +1,4 @@
+import { flushMessages, watchMessages } from './message-loop.ts';
 import koffi from 'koffi';
 import { foregroundWindow } from './native.ts';
 import type { ForegroundWindow } from './resource.ts';
@@ -19,29 +20,13 @@ const install = user.func(
   flags: number,
 ) => number;
 const unhook = user.func('bool __stdcall UnhookWinEvent(uintptr_t)') as (handle: number) => boolean;
-const peek = user.func(
-  'bool __stdcall PeekMessageW(_Out_ void *,uintptr_t,uint32,uint32,uint32)',
-) as (message: Buffer, window: number, from: number, to: number, remove: number) => boolean;
-const translate = user.func('bool __stdcall TranslateMessage(const void *)') as (
-  message: Buffer,
-) => boolean;
-const dispatch = user.func('intptr_t __stdcall DispatchMessageW(const void *)') as (
-  message: Buffer,
-) => number;
 const ticks = kernel.func('uint32 __stdcall GetTickCount()') as () => number;
 export interface WindowEvent {
   window: ForegroundWindow | undefined;
   timestamp: number;
 }
-const messages = new Set<Buffer>();
 export function flushForeground(): void {
-  for (const message of messages) pump(message);
-}
-function pump(message: Buffer): void {
-  for (let count = 0; count < 100 && peek(message, 0, 0, 0, 1); count++) {
-    translate(message);
-    dispatch(message);
-  }
+  flushMessages();
 }
 function receive(listener: (event: WindowEvent) => void, window: number, time: number): void {
   try {
@@ -60,14 +45,9 @@ export function watchForeground(listener: (event: WindowEvent) => void): () => v
     koffi.unregister(callback);
     throw new Error('Cannot observe foreground events');
   }
-  const message = Buffer.alloc(process.arch === 'ia32' ? 28 : 48);
-  messages.add(message);
-  const timer = setInterval(() => {
-    pump(message);
-  }, 25);
+  const stopMessages = watchMessages();
   return () => {
-    clearInterval(timer);
-    messages.delete(message);
+    stopMessages();
     unhook(handle);
     koffi.unregister(callback);
   };

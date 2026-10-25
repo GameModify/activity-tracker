@@ -21,3 +21,17 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run verify
+      - if: runner.os == 'Windows'
+        run: npm run prepare:installer
+      - if: runner.os == 'Windows'
+        run: npm run package:windows
+      - if: runner.os == 'Windows'
+        run: node scripts/desktop/smoke.ts
+      - if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: activity-tracker-windows
+          path: |
+            dist/windows/*.zip
+            dist/windows/*-setup.exe
+            dist/windows/SHA256SUMS.txt

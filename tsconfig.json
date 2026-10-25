@@ -17,5 +17,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/**/*.ts", "extension/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "*.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "extension/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "*.config.ts",
+    "desktop-ui/**/*.ts"
+  ]
 }

@@ -128,3 +128,6 @@ export type { ContentLabel, VideoIdentity, VideoChoice, VideoLabels } from './co
 
 export { idleTimeoutSchema, trackingPreferencesSchema } from './preferences.ts';
 export type { TrackingPreferences } from './preferences.ts';
+
+export { connectionSchema } from './connection.ts';
+export type { ConnectionInformation } from './connection.ts';

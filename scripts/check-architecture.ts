@@ -19,13 +19,13 @@ function check(file: string, specifier: string): void {
   if (file.startsWith('src/application') && target.startsWith('src/adapters/'))
     failures.push(file + ': application imports adapter');
   if (
-    file.startsWith('extension/') &&
+    (file.startsWith('extension/') || file.startsWith('desktop-ui/')) &&
     target.startsWith('src/') &&
     target !== 'src/domain/contracts.ts'
   )
     failures.push(file + ': extension imports service internals');
 }
-for (const full of [...files('src'), ...files('extension')]) {
+for (const full of [...files('src'), ...files('extension'), ...files('desktop-ui')]) {
   const file = full.replaceAll('\\', '/');
   const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest);
   const visit = (node: ts.Node): void => {

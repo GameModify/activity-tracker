@@ -1,0 +1,32 @@
+name: Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check tag version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node --input-type=module -e "import fs from 'node:fs'; if ('v' + JSON.parse(fs.readFileSync('package.json','utf8')).version !== process.env.RELEASE_TAG) throw new Error('Tag and package versions differ')"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run verify
+      - run: npm run prepare:installer
+      - run: npm run package:windows
+      - run: node scripts/desktop/smoke.ts
+      - name: Publish verified Windows artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $version = $env:RELEASE_TAG.Substring(1)
+          gh release create $env:RELEASE_TAG "dist/windows/ActivityTracker-$version-windows-x64.zip" "dist/windows/ActivityTracker-$version-windows-x64-setup.exe" "dist/windows/ActivityTracker-Chrome.zip" "dist/windows/SHA256SUMS.txt" --verify-tag --title "Activity Tracker $version" --notes-file "docs/releases/$version.md"

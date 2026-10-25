@@ -33,7 +33,7 @@ const strictFlags = [
   'useUnknownInCatchVariables',
   'strictBuiltinIteratorReturn',
 ] as const;
-const sourceRoots = ['src', 'extension', 'tests', 'scripts'];
+const sourceRoots = ['src', 'extension', 'desktop-ui', 'tests', 'scripts'];
 
 export function assertCompilerOptions(options: CompilerOptions): void {
   for (const flag of requiredFlags) {

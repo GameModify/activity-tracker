@@ -1,24 +1,43 @@
 {
   "name": "@gamemodify/activity-tracker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Independent local activity tracking service and Chrome collector",
-  "engines": { "node": ">=24.12.0" },
+  "engines": {
+    "node": ">=24.12.0"
+  },
   "scripts": {
     "start": "node src/main.ts",
-    "check": "tsc --noEmit && node scripts/check-architecture.ts && eslint src extension tests scripts *.config.ts --max-warnings=0 && prettier --check src extension tests scripts *.config.ts tsconfig.json",
+    "check": "tsc --noEmit && node scripts/check-architecture.ts && eslint src extension desktop-ui tests scripts *.config.ts --max-warnings=0 && prettier --check src extension desktop-ui tests scripts *.config.ts tsconfig.json",
     "build": "tsc --noEmit && node scripts/build.ts",
     "test": "node --test --test-concurrency=2 tests/*.test.ts",
     "quality:audit": "node scripts/quality/verify-project.ts --audit",
     "verify": "node scripts/quality/verify-project.ts",
-    "format": "prettier --write src extension tests scripts *.config.ts tsconfig.json"
+    "format": "prettier --write src extension desktop-ui tests scripts *.config.ts tsconfig.json",
+    "desktop": "node src/desktop.ts",
+    "package:windows": "node scripts/package-windows.ts",
+    "prepare:installer": "node scripts/desktop/compiler.ts"
   },
-  "dependencies": { "express": "^5.1.0", "koffi": "^3.3.3", "zod": "^4.6.7" },
+  "dependencies": {
+    "express": "^5.1.0",
+    "koffi": "^3.3.3",
+    "zod": "^4.6.7"
+  },
   "devDependencies": {
-    "@eslint/js": "^9.35.0", "@types/chrome": "^0.1.24", "@types/express": "^5.0.6",
-    "@types/node": "^24.19.2", "esbuild": "^0.25.12", "eslint": "^9.35.0",
-    "eslint-plugin-sonarjs": "^4.2.2", "globals": "^16.4.0", "jiti": "^2.7.0",
-    "prettier": "^3.6.2", "typescript": "~6.0.3", "typescript-eslint": "^8.72.0"
+    "@eslint/js": "^9.35.0",
+    "@types/chrome": "^0.1.24",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.35.0",
+    "eslint-plugin-sonarjs": "^4.2.2",
+    "globals": "^16.4.0",
+    "jiti": "^2.7.0",
+    "postject": "1.0.0-alpha.6",
+    "prettier": "^3.6.2",
+    "resedit": "3.1.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.0"
   }
 }
