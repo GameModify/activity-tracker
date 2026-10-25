@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idleTimeoutSchema } from './preferences.ts';
 import { validFolder } from './paths.ts';
 export const resourceSchema = z.object({
   media_creator: z.string().max(200).optional(),
@@ -38,7 +39,7 @@ export const observationSchema = z.object({
   position_seconds: z.number().nonnegative().optional(),
   duration_seconds: z.number().nonnegative().optional(),
   interaction_at: z.number().int().nonnegative().optional(),
-  idle_timeout_ms: z.union([z.literal(120000), z.literal(300000)]).optional(),
+  idle_timeout_ms: idleTimeoutSchema.optional(),
   website: resourceSchema.shape.website,
   resource_id: resourceSchema.shape.resource_id,
   resource_kind: resourceSchema.shape.resource_kind,
@@ -124,3 +125,6 @@ export {
   videoLabelsSchema,
 } from './content-labels.ts';
 export type { ContentLabel, VideoIdentity, VideoChoice, VideoLabels } from './content-labels.ts';
+
+export { idleTimeoutSchema, trackingPreferencesSchema } from './preferences.ts';
+export type { TrackingPreferences } from './preferences.ts';

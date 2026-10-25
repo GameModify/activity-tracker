@@ -1,3 +1,4 @@
+import { preferenceRoutes } from './preferences.ts';
 import { labelReadRoutes, labelWriteRoutes } from './content-labels.ts';
 import express from 'express';
 import { browserRoutes } from './browser-routes.ts';
@@ -28,7 +29,7 @@ function ingestionRoutes(app: express.Express, runtime: TrackingRuntime, keys: C
   });
   app.post('/v1/observations', authorize(keys.ingest), (req, res) => {
     acceptBrowser(req, runtime);
-    res.status(202).json({ ok: true, paused: runtime.paused });
+    res.status(202).json({ ok: true, paused: runtime.paused, ...runtime.store.preferences() });
   });
 }
 function errors(app: express.Express): void {
@@ -58,6 +59,7 @@ export function createHttpApp(runtime: TrackingRuntime, keys: Credentials): expr
   app.use('/v1', authorize(keys.read));
   readRoutes(app, runtime);
   controlRoutes(app, runtime);
+  preferenceRoutes(app, runtime);
   labelWriteRoutes(app, runtime);
   errors(app);
   return app;

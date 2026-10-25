@@ -1,3 +1,4 @@
+import { idleTimeoutSchema } from '../src/domain/contracts.ts';
 import { videoLabelsSchema } from '../src/domain/contracts.ts';
 import type { VideoLabels } from '../src/domain/contracts.ts';
 import type { VideoLabelMessage } from './video-label-model.ts';
@@ -8,9 +9,14 @@ import type { BrowserPreferences } from '../src/domain/contracts.ts';
 import { observationSchema } from '../src/domain/contracts.ts';
 import type { Observation } from '../src/domain/contracts.ts';
 import { settings } from './model.ts';
-const receiptSchema = z.object({ ok: z.literal(true), paused: z.boolean().default(false) });
+const receiptSchema = z.object({
+  ok: z.literal(true),
+  paused: z.boolean().default(false),
+  idle_timeout_ms: idleTimeoutSchema.default(300000),
+});
 export const deliverySchema = z.object({
   last_sent: z.number().default(0),
+  server_idle_timeout_ms: idleTimeoutSchema.default(300000),
   connection_error: z.string().default(''),
   server_paused: z.boolean().default(false),
 });
@@ -30,6 +36,7 @@ async function deliver(queue: Observation[], token: string): Promise<void> {
     connection_error: '',
     last_sent: Date.now(),
     server_paused: receipt.paused,
+    server_idle_timeout_ms: receipt.idle_timeout_ms,
   });
 }
 async function flush(samples: Observation[]): Promise<void> {

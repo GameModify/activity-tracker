@@ -50,7 +50,7 @@ async function verifyPausedReceipt(api: ApiFixture): Promise<void> {
   const input = sample(0, { timestamp: Date.now(), source: 'chrome', channel: 'chrome:test' });
   const response = await post(api, [input]);
   assert.equal(response.status, 202);
-  assert.deepEqual(await response.json(), { ok: true, paused: true });
+  assert.deepEqual(await response.json(), { ok: true, paused: true, idle_timeout_ms: 300000 });
   assert.equal(api.store.intervals(0, 10).length, 0);
 }
 void test('ingestion acknowledgements expose a paused collector without accepting intervals', () =>

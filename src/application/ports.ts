@@ -5,6 +5,7 @@ import type {
   Rule,
   CollectorDiagnostic,
 } from '../domain/contracts.ts';
+import type { TrackingPreferences } from '../domain/preferences.ts';
 export interface OpenChannel {
   channel: string;
   interval_id: string;
@@ -13,6 +14,8 @@ export interface OpenChannel {
   signature: string;
 }
 export interface TrackingStore {
+  preferences(): TrackingPreferences;
+  setPreferences(value: TrackingPreferences): void;
   labels(): ContentLabel[];
   replaceLabels(labels: ContentLabel[]): void;
   recordDiagnostic(item: CollectorDiagnostic): void;

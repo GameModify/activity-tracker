@@ -1,3 +1,4 @@
+import { idleMinutes } from './idle-timeout.ts';
 import type { InteractionDiagnostic } from './interaction-diagnostics.ts';
 type Reason = 'disabled' | 'permission' | 'paused' | 'waiting' | 'idle' | 'unfocused' | 'active';
 interface InteractionView {
@@ -21,7 +22,7 @@ const views: Record<Reason, InteractionView> = {
       'Вернись в чат, прокрути его или начни ввод. Если сигнала нет, нажми «Проверить и запустить сбор».',
   },
   idle: {
-    heading: '5 минут без действий',
+    heading: 'Нет действий',
     detail: 'Учёт приостановлен. Прокрути чат или начни ввод, чтобы продолжить.',
   },
   unfocused: {
@@ -38,6 +39,7 @@ function reason(
   enabled: boolean,
   paused: boolean,
   now: number,
+  timeout: number,
 ): Reason {
   if (!enabled) return 'disabled';
   if (!diagnostic?.selected || !diagnostic.permitted) return 'permission';
@@ -45,7 +47,7 @@ function reason(
   const state = diagnostic.state;
   if (!state || (!state.interaction_at && !state.recording) || now - state.observed_at >= 15000)
     return 'waiting';
-  if (!state.recording && now - state.interaction_at >= 300000) return 'idle';
+  if (!state.recording && now - state.interaction_at >= timeout) return 'idle';
   return state.focused ? 'active' : 'unfocused';
 }
 export function interactionView(
@@ -53,6 +55,10 @@ export function interactionView(
   enabled: boolean,
   paused: boolean,
   now = Date.now(),
+  timeout = 300000,
 ): InteractionView {
-  return views[reason(diagnostic, enabled, paused, now)];
+  const selected = reason(diagnostic, enabled, paused, now, timeout);
+  return selected === 'idle'
+    ? { ...views.idle, heading: idleMinutes(timeout) + ' без действий' }
+    : views[selected];
 }

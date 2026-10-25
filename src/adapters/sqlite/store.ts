@@ -1,3 +1,5 @@
+import { trackingPreferencesSchema } from '../../domain/preferences.ts';
+import type { TrackingPreferences } from '../../domain/preferences.ts';
 import { initializeLabels, readLabels, writeLabels } from './content-labels.ts';
 import type { ContentLabel } from '../../domain/contracts.ts';
 import { initializeDiagnostics, saveDiagnostic, readDiagnostics } from './diagnostics.ts';
@@ -94,6 +96,15 @@ export class SqliteStore implements TrackingStore {
     if (this.db.prepare('SELECT 1 FROM settings WHERE key=?').get('seeded')) return;
     this.replaceRules(defaultRules(randomUUID));
     this.db.prepare('INSERT INTO settings VALUES (?,?)').run('seeded', 'true');
+  }
+  preferences(): TrackingPreferences {
+    const row = this.db.prepare('SELECT value FROM settings WHERE key=?').get('idle_timeout_ms');
+    return trackingPreferencesSchema.parse(row ? { idle_timeout_ms: Number(row.value) } : {});
+  }
+  setPreferences(value: TrackingPreferences): void {
+    this.db
+      .prepare('INSERT OR REPLACE INTO settings VALUES (?,?)')
+      .run('idle_timeout_ms', String(value.idle_timeout_ms));
   }
   paused(): boolean {
     return (

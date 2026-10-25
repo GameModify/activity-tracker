@@ -62,6 +62,6 @@ function interactionObservation(
     interaction_at: state?.interaction_at ?? 0,
     chatgpt_project: state?.chatgpt_project,
     recording: Boolean(state?.recording),
-    idle_timeout_ms: 300000,
+    idle_timeout_ms: sample.idle_timeout_ms,
   };
 }

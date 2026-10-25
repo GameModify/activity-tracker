@@ -159,3 +159,8 @@ Windows-приложения ChatGPT.exe и Codex.exe учитываются к�
 Тест с подтверждёнными границами «1 секунда, перерыв, 1 час» должен давать 3 601 000 мс. Это проверка расчёта по событиям, а не обещание абсолютной точности при аварии, потере разрешений или отсутствии исходных сигналов.
 
 Источники: [Chrome tabs](https://developer.chrome.com/docs/extensions/reference/api/tabs), [Chrome windows](https://developer.chrome.com/docs/extensions/reference/api/windows), [SetWinEventHook](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwineventhook), [Koffi callbacks](https://koffi.dev/callbacks).
+
+
+## Inactivity preferences
+
+The authenticated `GET /v1/preferences` and `POST /v1/preferences` endpoints read and update `{ idle_timeout_ms }`. Accepted values are whole minutes from 60,000 to 1,800,000 ms (default 300,000). The value persists in SQLite and is included in status and ingestion acknowledgements. Focus observations use the service policy; media playback and voice state are independent. Chrome collector 0.8.0 reads the acknowledged value for its idle detector and popup. Existing clients can keep their default policy until updated.

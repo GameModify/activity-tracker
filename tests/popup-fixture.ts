@@ -1,3 +1,4 @@
+import { deliverySchema } from '../extension/http.ts';
 import { settingsSchema } from '../extension/model.ts';
 import type { FrameStatus } from '../extension/diagnostic-model.ts';
 import type { PopupState } from '../extension/popup-model.ts';
@@ -31,7 +32,7 @@ export function popup(patch: Partial<PopupState> = {}): PopupState {
     current: [],
     playing: [],
     missing: [],
-    delivery: { last_sent: timestamp, server_paused: false, connection_error: '' },
+    delivery: deliverySchema.parse({ last_sent: timestamp }),
     ...patch,
   };
 }

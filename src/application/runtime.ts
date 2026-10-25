@@ -1,3 +1,4 @@
+import { applyIdleTimeout } from '../domain/preferences.ts';
 import { dictationObservation } from './dictation.ts';
 import { websiteObservation } from '../domain/browser.ts';
 import { matchingRule } from '../domain/classify.ts';
@@ -42,8 +43,9 @@ export class TrackingRuntime {
     this.paused = paused;
     this.store.setPaused(paused);
   }
-  accept(sample: Observation): void {
+  accept(observed: Observation): void {
     if (this.paused) return;
+    const sample = applyIdleTimeout(observed, this.store.preferences());
     ingest(this.store, sample);
     this.playback.accept(sample);
     if (sample.source === 'chrome') {
@@ -75,7 +77,8 @@ export class TrackingRuntime {
   }
   observeDesktop(observed: Observation): void {
     if (this.paused || observed.timestamp <= (this.desktopAt ?? 0)) return;
-    const sample = this.assistantContext(desktopActivity(observed, this.store.rules()));
+    const configured = applyIdleTimeout(observed, this.store.preferences());
+    const sample = this.assistantContext(desktopActivity(configured, this.store.rules()));
     this.foreground = sample;
     for (const item of this.gameObservations(sample)) this.accept(item);
     this.dictation = dictationObservation(sample);
@@ -120,8 +123,20 @@ export class TrackingRuntime {
     if (!this.foreground || Date.now() - this.foreground.timestamp >= 15000) return null;
     return matchingRule(this.foreground, this.store.rules()) ?? null;
   }
+  collectorStatus() {
+    return {
+      device_id: this.store.deviceId(),
+      paused: this.paused,
+      desktop_available: Boolean(this.collector),
+      desktop_error: this.desktopError,
+      desktop_at: this.desktopAt,
+      browser_at: this.browserAt,
+      browser_version: this.browserVersion,
+    };
+  }
   status() {
     return {
+      ...this.store.preferences(),
       api_version: 1,
       assistant: this.assistant(),
       browser: this.paused ? null : (this.browser ?? null),
@@ -130,13 +145,7 @@ export class TrackingRuntime {
       foreground_rule: this.paused ? null : this.foregroundRule(),
       foreground: this.paused ? null : (this.foreground ?? null),
       voice: this.voiceCollector?.status?.() ?? { state: 'unknown', observed_at: 0 },
-      device_id: this.store.deviceId(),
-      paused: this.paused,
-      desktop_available: Boolean(this.collector),
-      desktop_error: this.desktopError,
-      desktop_at: this.desktopAt,
-      browser_at: this.browserAt,
-      browser_version: this.browserVersion,
+      ...this.collectorStatus(),
     };
   }
 }

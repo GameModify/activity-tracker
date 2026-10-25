@@ -8,12 +8,7 @@ export function renderInteraction(state: PopupState): void {
   const diagnostic = state.interaction;
   element('interaction-section', HTMLElement).hidden = !diagnostic;
   if (!diagnostic) return;
-  const view = interactionView(diagnostic, state.config.enabled, state.delivery.server_paused);
-  text(
-    'interaction-status',
-    chatGPTLabel(state.tab?.url ?? '', diagnostic.state?.chatgpt_project) ?? view.heading,
-  );
-  text('interaction-detail', view.detail);
+  renderStatus(state);
   const button = element('interaction-enable', HTMLButtonElement);
   button.hidden = !state.config.enabled || (diagnostic.selected && diagnostic.permitted);
   button.textContent = 'Включить учёт действий: ' + new URL(diagnostic.site).hostname;
@@ -22,6 +17,20 @@ export function renderInteraction(state: PopupState): void {
       text('notice', error instanceof Error ? error.message : 'Не удалось включить учёт действий');
     });
   };
+}
+function renderStatus(state: PopupState): void {
+  const view = interactionView(
+    state.interaction,
+    state.config.enabled,
+    state.delivery.server_paused,
+    Date.now(),
+    state.delivery.server_idle_timeout_ms,
+  );
+  text(
+    'interaction-status',
+    chatGPTLabel(state.tab?.url ?? '', state.interaction?.state?.chatgpt_project) ?? view.heading,
+  );
+  text('interaction-detail', view.detail);
 }
 async function enable(site: string, tab: number | undefined): Promise<void> {
   if (await grantSite(site, 'interaction_sites')) await restoreCollector(tab);

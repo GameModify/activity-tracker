@@ -6,14 +6,16 @@ export function engaged(sample: Observation): boolean {
     return (
       sample.interaction_at > 0 &&
       sample.timestamp >= sample.interaction_at &&
-      sample.timestamp - sample.interaction_at < interactionTimeout
+      sample.timestamp - sample.interaction_at < (sample.idle_timeout_ms ?? interactionTimeout)
     );
   return sample.idle_ms < (sample.idle_timeout_ms ?? 90000);
 }
 export function idleEnd(sample: Observation): number | undefined {
   if (sample.kind !== 'focus' || sample.recording) return undefined;
   if (sample.interaction_at !== undefined && !engaged(sample))
-    return sample.interaction_at ? sample.interaction_at + interactionTimeout : sample.timestamp;
+    return sample.interaction_at
+      ? sample.interaction_at + (sample.idle_timeout_ms ?? interactionTimeout)
+      : sample.timestamp;
   if (sample.idle_ms >= (sample.idle_timeout_ms ?? 90000))
     return sample.timestamp - sample.idle_ms + (sample.idle_timeout_ms ?? 0);
   return undefined;
