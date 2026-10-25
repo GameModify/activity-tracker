@@ -1,3 +1,5 @@
+import { prepareDesktopData } from './adapters/sqlite/desktop-migration.ts';
+import { physicalDirectory } from './adapters/windows/physical-directory.ts';
 import { z } from 'zod';
 import { desktopLogging } from './adapters/desktop-logging.ts';
 import path from 'node:path';
@@ -26,6 +28,7 @@ async function desktop(): Promise<void> {
   if (process.platform !== 'win32') throw new Error('Приложение в трее поддерживает Windows');
   const config = applicationConfiguration();
   desktopLogging(config.directory);
+  console.log('Activity Tracker data directory:', config.directory);
   const native = await import('./adapters/windows/tray-native.ts');
   if (process.argv.includes('--quit')) {
     await quitExisting(config.port, native.requestTrayExit);
@@ -45,6 +48,7 @@ async function launch(
   const release = desktopInstance(config.port);
   if (!release) return;
   try {
+    await prepareDesktopData(config.directory, config.legacyDirectory, physicalDirectory);
     const app = await startTracking(config);
     await attachTray(app, config, release, open);
   } catch (error) {

@@ -22,6 +22,7 @@ jobs:
       - run: npm run prepare:installer
       - run: npm run package:windows
       - run: node scripts/desktop/smoke.ts
+      - run: node scripts/desktop/smoke-default-data.ts
       - name: Publish verified Windows artifacts
         env:
           GH_TOKEN: ${{ github.token }}
