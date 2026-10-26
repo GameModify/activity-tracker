@@ -9,6 +9,7 @@ AppId={{7DC4E549-3D1F-49E4-A4B4-BC37C02E37D1}
 AppName=Activity Tracker
 AppVersion={#AppVersion}
 AppPublisher=GameModify
+LicenseFile={#AppSource}\LICENSE.md
 AppPublisherURL=https://github.com/GameModify/activity-tracker
 DefaultDirName={localappdata}\Programs\ActivityTracker
 DefaultGroupName=Activity Tracker

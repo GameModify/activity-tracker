@@ -8,6 +8,8 @@ const { version } = z
   .object({ version: z.string().regex(/^\d+\.\d+\.\d+$/) })
   .parse(JSON.parse(manifest));
 await mkdir(out, { recursive: true });
+await copyFile('LICENSE.md', out + '/LICENSE.md');
+await copyFile('node_modules/zod/LICENSE', out + '/THIRD-PARTY-NOTICES.txt');
 await build({
   entryPoints: ['extension/background.ts', 'extension/options.ts', 'extension/popup.ts'],
   outdir: out,

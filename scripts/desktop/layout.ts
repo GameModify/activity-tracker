@@ -14,6 +14,7 @@ export async function applicationFiles(directory: string): Promise<void> {
   await cp('dist/chrome', path.join(directory, 'chrome'), { recursive: true });
   await nativeDependencies(directory);
   await cp('README.md', path.join(directory, 'README.md'));
+  await cp('LICENSE.md', path.join(directory, 'LICENSE.md'));
   await writeFile(path.join(directory, 'THIRD-PARTY-NOTICES.txt'), await notices());
 }
 async function nativeDependencies(directory: string): Promise<void> {
